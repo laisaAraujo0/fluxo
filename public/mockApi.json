@@ -1,0 +1,79 @@
+{
+  "eventos": [
+    {
+      "id": "evt1",
+      "titulo": "Feira de Artesanato Local",
+      "descricao": "Descubra produtos artesanais únicos e apoie artistas locais.",
+      "categoria": "Cultura",
+      "data": "2025-11-10T10:00:00Z",
+      "horario": "10:00 - 18:00",
+      "endereco": "Praça Central, 100",
+      "localizacao": "Centro",
+      "preco": "Grátis",
+      "imagem": "https://via.placeholder.com/400x200?text=Feira+Artesanato",
+      "participantes": 150,
+      "avaliacoes": 4.5,
+      "tags": ["artesanato", "feira", "cultura", "local"]
+    },
+    {
+      "id": "evt2",
+      "titulo": "Show de Rock no Parque",
+      "descricao": "Bandas locais agitando o parque com muito rock and roll.",
+      "categoria": "Música",
+      "data": "2025-11-15T19:00:00Z",
+      "horario": "19:00 - 23:00",
+      "endereco": "Parque Municipal",
+      "localizacao": "Zona Sul",
+      "preco": "R$ 20,00",
+      "imagem": "https://via.placeholder.com/400x200?text=Show+Rock",
+      "participantes": 300,
+      "avaliacoes": 4.8,
+      "tags": ["rock", "show", "música", "parque"]
+    },
+    {
+      "id": "evt3",
+      "titulo": "Workshop de Fotografia Urbana",
+      "descricao": "Aprenda técnicas de fotografia para capturar a beleza da cidade.",
+      "categoria": "Educação",
+      "data": "2025-11-20T09:00:00Z",
+      "horario": "09:00 - 13:00",
+      "endereco": "Galeria de Arte, 50",
+      "localizacao": "Centro",
+      "preco": "R$ 50,00",
+      "imagem": "https://via.placeholder.com/400x200?text=Workshop+Fotografia",
+      "participantes": 30,
+      "avaliacoes": 4.2,
+      "tags": ["fotografia", "workshop", "arte", "educação"]
+    }
+  ],
+  "reclamacoes": [
+    {
+      "id": "rec1",
+      "titulo": "Buraco na Rua Principal",
+      "descricao": "Grande buraco na Rua Principal, próximo ao número 123. Perigo para carros e pedestres.",
+      "status": "Em análise",
+      "data": "2025-10-01T14:30:00Z",
+      "localizacao": "Centro",
+      "categoria": "Infraestrutura"
+    },
+    {
+      "id": "rec2",
+      "titulo": "Lâmpada de poste queimada",
+      "descricao": "Poste de luz na Rua das Flores, em frente ao número 45, está com a lâmpada queimada há dias.",
+      "status": "Pendente",
+      "data": "2025-09-28T09:00:00Z",
+      "localizacao": "Zona Norte",
+      "categoria": "Iluminação Pública"
+    }
+  ],
+  "ceps": [
+    {
+      "cep": "01001000",
+      "endereco": "Praça da Sé, lado ímpar - Centro, São Paulo - SP"
+    },
+    {
+      "cep": "20040000",
+      "endereco": "Avenida Rio Branco, 1 - Centro, Rio de Janeiro - RJ"
+    }
+  ]
+}

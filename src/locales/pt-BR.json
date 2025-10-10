@@ -1,0 +1,188 @@
+{
+  "common": {
+    "loading": "Carregando...",
+    "error": "Erro",
+    "success": "Sucesso",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "close": "Fechar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "previous": "Anterior",
+    "submit": "Enviar",
+    "confirm": "Confirmar",
+    "yes": "Sim",
+    "no": "Não"
+  },
+  "nav": {
+    "home": "Início",
+    "events": "Eventos",
+    "map": "Mapa",
+    "dashboard": "Dashboard",
+    "profile": "Perfil",
+    "login": "Entrar",
+    "logout": "Sair",
+    "register": "Cadastrar"
+  },
+  "home": {
+    "title": "Bem-vindo ao Mapa da Realidade",
+    "subtitle": "Conectando comunidades através de eventos e informações locais",
+    "cta": "Explorar Eventos",
+    "features": {
+      "events": "Eventos Locais",
+      "map": "Mapa Interativo",
+      "community": "Comunidade Ativa"
+    }
+  },
+  "events": {
+    "title": "Eventos",
+    "subtitle": "Descubra e participe de eventos incríveis na sua região",
+    "noEvents": "Nenhum evento encontrado",
+    "newEvent": "Novo Evento",
+    "categories": {
+      "all": "Todas",
+      "culture": "Cultura",
+      "sports": "Esportes",
+      "education": "Educação",
+      "health": "Saúde",
+      "technology": "Tecnologia",
+      "music": "Música",
+      "gastronomy": "Gastronomia",
+      "art": "Arte",
+      "infrastructure": "Infraestrutura",
+      "others": "Outros"
+    },
+    "filters": {
+      "category": "Categoria",
+      "location": "Localização",
+      "date": "Data",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Ativo",
+      "pending": "Pendente",
+      "inProgress": "Em Andamento",
+      "resolved": "Resolvido",
+      "cancelled": "Cancelado"
+    },
+    "details": {
+      "date": "Data",
+      "time": "Horário",
+      "location": "Local",
+      "organizer": "Organizador",
+      "participants": "Participantes",
+      "rating": "Avaliação"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Visão geral das atividades e estatísticas da plataforma",
+    "tabs": {
+      "overview": "Visão Geral",
+      "analytics": "Análises",
+      "reports": "Relatórios",
+      "settings": "Configurações"
+    },
+    "stats": {
+      "totalEvents": "Total de Eventos",
+      "activeUsers": "Usuários Ativos",
+      "resolvedToday": "Resolvidos Hoje",
+      "averageRating": "Avaliação Média"
+    },
+    "charts": {
+      "eventsPerMonth": "Eventos por Mês",
+      "eventsByCategory": "Eventos por Categoria",
+      "statusDistribution": "Distribuição por Status",
+      "activeUsers": "Usuários Ativos"
+    }
+  },
+  "notifications": {
+    "title": "Notificações",
+    "subtitle": "Acompanhe todas as suas notificações em um só lugar",
+    "markAllRead": "Marcar todas como lidas",
+    "clear": "Limpar",
+    "noNotifications": "Nenhuma notificação",
+    "types": {
+      "event": "Evento",
+      "complaint": "Reclamação",
+      "system": "Sistema"
+    }
+  },
+  "profile": {
+    "title": "Perfil",
+    "subtitle": "Gerencie suas informações e preferências",
+    "personalInfo": "Informações Pessoais",
+    "preferences": "Preferências",
+    "security": "Segurança",
+    "notifications": "Notificações",
+    "location": "Localização"
+  },
+  "forms": {
+    "required": "Campo obrigatório",
+    "invalidEmail": "Email inválido",
+    "invalidCEP": "CEP inválido",
+    "invalidPhone": "Telefone inválido",
+    "passwordMismatch": "As senhas não coincidem",
+    "minLength": "Mínimo de {count} caracteres",
+    "maxLength": "Máximo de {count} caracteres"
+  },
+  "auth": {
+    "login": {
+      "title": "Entrar",
+      "subtitle": "Acesse sua conta",
+      "email": "Email",
+      "password": "Senha",
+      "rememberMe": "Lembrar-me",
+      "forgotPassword": "Esqueceu a senha?",
+      "noAccount": "Não tem uma conta?",
+      "signUp": "Cadastre-se"
+    },
+    "register": {
+      "title": "Criar Conta",
+      "subtitle": "Cadastre-se gratuitamente",
+      "name": "Nome completo",
+      "email": "Email",
+      "password": "Senha",
+      "confirmPassword": "Confirmar senha",
+      "hasAccount": "Já tem uma conta?",
+      "signIn": "Faça login"
+    }
+  },
+  "recommendations": {
+    "title": "Recomendado para Você",
+    "subtitle": "Eventos selecionados especialmente para sua região",
+    "noLocation": "Configure sua localização para receber recomendações personalizadas",
+    "configureLocation": "Configurar Localização",
+    "viewAll": "Ver Todas as Recomendações",
+    "match": "compatibilidade"
+  },
+  "pushNotifications": {
+    "title": "Notificações Push",
+    "subtitle": "Configure como você deseja receber notificações",
+    "enabled": "Notificações Ativadas",
+    "disabled": "Notificações Desativadas",
+    "enable": "Ativar",
+    "disable": "Desativar",
+    "types": {
+      "newEvents": "Novos Eventos",
+      "updates": "Atualizações de Reclamações",
+      "reminders": "Lembretes de Eventos",
+      "system": "Notificações do Sistema"
+    },
+    "test": "Enviar Notificação de Teste",
+    "blocked": "Notificações Bloqueadas",
+    "notSupported": "Notificações Não Suportadas"
+  },
+  "footer": {
+    "about": "Sobre",
+    "contact": "Contato",
+    "terms": "Termos de Uso",
+    "privacy": "Privacidade",
+    "copyright": "© 2024 Mapa da Realidade. Todos os direitos reservados."
+  }
+}
+

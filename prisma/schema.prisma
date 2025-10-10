@@ -1,0 +1,168 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  username  String   @unique
+  avatar    String?
+  bio       String?
+  cidade    String?
+  estado    String?
+  telefone  String?
+  status    UserStatus @default(ACTIVE)
+  
+  // Configurações de privacidade
+  perfilPublico     Boolean @default(true)
+  mostrarEmail      Boolean @default(true)
+  mostrarCidade     Boolean @default(true)
+  mostrarTelefone   Boolean @default(false)
+  
+  // Configurações de notificação
+  notificacaoComentarios Boolean @default(true)
+  notificacaoMencoes     Boolean @default(true)
+  notificacaoSeguidores  Boolean @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  events    Event[]
+  complaints Complaint[]
+  comments  Comment[]
+  likes     Like[]
+
+  @@map("users")
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  location    String
+  imageUrl    String?
+  category    EventCategory
+  status      EventStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  authorId    String
+  author      User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments    Comment[]
+  likes       Like[]
+
+  @@map("events")
+}
+
+model Complaint {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  location    String
+  priority    Priority @default(LOW)
+  status      ComplaintStatus @default(PENDING)
+  likes       Int @default(0)
+  commentsCount Int @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  authorId    String
+  author      User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments    Comment[]
+
+  @@map("complaints")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  authorId    String
+  author      User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  eventId     String?
+  event       Event? @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  complaintId String?
+  complaint   Complaint? @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // Relacionamentos
+  userId    String
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  eventId   String?
+  event     Event? @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@map("likes")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  eventsCount Int @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("categories")
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  SUSPENDED
+}
+
+enum EventStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  RESOLVED
+}
+
+enum EventCategory {
+  INFRASTRUCTURE
+  SECURITY
+  ENVIRONMENT
+  TRANSPORT
+  HEALTH
+  EDUCATION
+  OTHER
+}
+
+enum ComplaintStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}

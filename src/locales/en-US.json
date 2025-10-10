@@ -1,0 +1,188 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "filter": "Filter",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "nav": {
+    "home": "Home",
+    "events": "Events",
+    "map": "Map",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register"
+  },
+  "home": {
+    "title": "Welcome to Reality Map",
+    "subtitle": "Connecting communities through local events and information",
+    "cta": "Explore Events",
+    "features": {
+      "events": "Local Events",
+      "map": "Interactive Map",
+      "community": "Active Community"
+    }
+  },
+  "events": {
+    "title": "Events",
+    "subtitle": "Discover and join amazing events in your area",
+    "noEvents": "No events found",
+    "newEvent": "New Event",
+    "categories": {
+      "all": "All",
+      "culture": "Culture",
+      "sports": "Sports",
+      "education": "Education",
+      "health": "Health",
+      "technology": "Technology",
+      "music": "Music",
+      "gastronomy": "Gastronomy",
+      "art": "Art",
+      "infrastructure": "Infrastructure",
+      "others": "Others"
+    },
+    "filters": {
+      "category": "Category",
+      "location": "Location",
+      "date": "Date",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "pending": "Pending",
+      "inProgress": "In Progress",
+      "resolved": "Resolved",
+      "cancelled": "Cancelled"
+    },
+    "details": {
+      "date": "Date",
+      "time": "Time",
+      "location": "Location",
+      "organizer": "Organizer",
+      "participants": "Participants",
+      "rating": "Rating"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Overview of platform activities and statistics",
+    "tabs": {
+      "overview": "Overview",
+      "analytics": "Analytics",
+      "reports": "Reports",
+      "settings": "Settings"
+    },
+    "stats": {
+      "totalEvents": "Total Events",
+      "activeUsers": "Active Users",
+      "resolvedToday": "Resolved Today",
+      "averageRating": "Average Rating"
+    },
+    "charts": {
+      "eventsPerMonth": "Events per Month",
+      "eventsByCategory": "Events by Category",
+      "statusDistribution": "Status Distribution",
+      "activeUsers": "Active Users"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "subtitle": "Track all your notifications in one place",
+    "markAllRead": "Mark all as read",
+    "clear": "Clear",
+    "noNotifications": "No notifications",
+    "types": {
+      "event": "Event",
+      "complaint": "Complaint",
+      "system": "System"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Manage your information and preferences",
+    "personalInfo": "Personal Information",
+    "preferences": "Preferences",
+    "security": "Security",
+    "notifications": "Notifications",
+    "location": "Location"
+  },
+  "forms": {
+    "required": "Required field",
+    "invalidEmail": "Invalid email",
+    "invalidCEP": "Invalid ZIP code",
+    "invalidPhone": "Invalid phone",
+    "passwordMismatch": "Passwords do not match",
+    "minLength": "Minimum {count} characters",
+    "maxLength": "Maximum {count} characters"
+  },
+  "auth": {
+    "login": {
+      "title": "Login",
+      "subtitle": "Access your account",
+      "email": "Email",
+      "password": "Password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up"
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Sign up for free",
+      "name": "Full name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in"
+    }
+  },
+  "recommendations": {
+    "title": "Recommended for You",
+    "subtitle": "Events specially selected for your region",
+    "noLocation": "Set your location to receive personalized recommendations",
+    "configureLocation": "Configure Location",
+    "viewAll": "View All Recommendations",
+    "match": "match"
+  },
+  "pushNotifications": {
+    "title": "Push Notifications",
+    "subtitle": "Configure how you want to receive notifications",
+    "enabled": "Notifications Enabled",
+    "disabled": "Notifications Disabled",
+    "enable": "Enable",
+    "disable": "Disable",
+    "types": {
+      "newEvents": "New Events",
+      "updates": "Complaint Updates",
+      "reminders": "Event Reminders",
+      "system": "System Notifications"
+    },
+    "test": "Send Test Notification",
+    "blocked": "Notifications Blocked",
+    "notSupported": "Notifications Not Supported"
+  },
+  "footer": {
+    "about": "About",
+    "contact": "Contact",
+    "terms": "Terms of Use",
+    "privacy": "Privacy",
+    "copyright": "© 2024 Reality Map. All rights reserved."
+  }
+}
+
