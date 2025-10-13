@@ -323,16 +323,20 @@ const MapaAvancado = ({
   };
 
   return (
-    <div className="relative">
-      <div style={{ height: altura, width: '100%' }} className="rounded-lg overflow-hidden border shadow-lg">
-        <MapContainer
-          center={coordenadasIniciais}
-          zoom={zoom}
-          style={{ height: '100%', width: '100%' }}
-          ref={mapRef}
-          whenCreated={handleMapaCarregado}
-          zoomControl={false}
-        >
+    <div className="relative z-0">
+  <div
+    style={{ height: altura, width: '100%' }}
+    className="rounded-lg overflow-hidden border shadow-lg leaflet-wrapper"
+  >
+    <MapContainer
+      center={coordenadasIniciais}
+      zoom={zoom}
+      style={{ height: '100%', width: '100%' }}
+      ref={mapRef}
+      whenCreated={handleMapaCarregado}
+      zoomControl={false}
+      className="leaflet-container-custom"
+    >
           <LayersControl position="topright">
             <LayersControl.BaseLayer checked name="Mapa Padrão">
               <TileLayer

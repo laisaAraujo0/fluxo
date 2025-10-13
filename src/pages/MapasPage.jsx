@@ -402,18 +402,8 @@ const MapasPage = () => {
                   </Button>
                 )}
                 
+                
                 <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" className="flex items-center gap-2">
-                      <Filter className="h-4 w-4" />
-                      Filtros
-                      {(filtros.categoria || filtros.status || filtros.prioridade || !filtros.mostrarResolvidos) && (
-                        <Badge variant="secondary" className="ml-1">
-                          {[filtros.categoria, filtros.status, filtros.prioridade, !filtros.mostrarResolvidos ? 'sem resolvidos' : ''].filter(Boolean).length}
-                        </Badge>
-                      )}
-                    </Button>
-                  </SheetTrigger>
                   <SheetContent>
                     <SheetHeader>
                       <SheetTitle>Filtros Avançados</SheetTitle>

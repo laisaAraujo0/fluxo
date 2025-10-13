@@ -1,41 +1,69 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import FormField, { validators } from '@/components/FormField';
 import { useUser } from '@/contexts/UserContext';
 import { toast } from 'sonner';
+import { useCEP } from '@/lib/cep'; // ✅ Importa hook de CEP
 
 const CadastroPage = () => {
   const navigate = useNavigate();
   const { login } = useUser();
+
+  // ✅ Hook para buscar CEP automaticamente
+  const { buscar, endereco, error, loading } = useCEP();
+
+  // ✅ Estado do formulário com novos campos
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
     senha: '',
-    confirmarSenha: ''
+    confirmarSenha: '',
+    cep: '',
+    cidade: '',
+    estado: '',
+    telefone: ''
   });
 
+  // ✅ Atualiza cidade e estado automaticamente quando o CEP é encontrado
+  useEffect(() => {
+    if (endereco) {
+      setFormData(prev => ({
+        ...prev,
+        cidade: endereco.localidade || '',
+        estado: endereco.uf || ''
+      }));
+    }
+  }, [endereco]);
+
+  // ✅ Captura mudanças nos inputs
   const handleInputChange = (field) => (e) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: e.target.value
-    }));
+    const value = e.target.value;
+    setFormData(prev => ({ ...prev, [field]: value }));
+
+    // Busca o CEP automaticamente quando completo
+    if (field === 'cep' && value.replace(/\D/g, '').length === 8) {
+      buscar(value);
+    }
   };
 
+  // ✅ Envio do formulário
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Validar se as senhas coincidem
+
     if (formData.senha !== formData.confirmarSenha) {
       toast.error('As senhas não coincidem');
       return;
     }
 
-    // Simular cadastro de usuário
     const novoUsuario = {
       id: Date.now(),
       nome: formData.nome,
       email: formData.email,
+      telefone: formData.telefone,
+      cidade: formData.cidade,
+      estado: formData.estado,
+      cep: formData.cep,
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.nome)}&background=random`,
       tipo: 'usuario',
       isAdmin: false,
@@ -43,9 +71,7 @@ const CadastroPage = () => {
       ativo: true
     };
 
-    // Fazer login automático após cadastro
     login(novoUsuario);
-    
     toast.success('Cadastro realizado com sucesso!');
     navigate('/');
   };
@@ -70,6 +96,7 @@ const CadastroPage = () => {
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           <div className="space-y-4">
+
             <FormField
               id="nome"
               label="Nome completo"
@@ -91,6 +118,56 @@ const CadastroPage = () => {
               placeholder="seu@email.com"
               required
               validation={validators.email}
+            />
+
+            {/* ✅ Campo de CEP com busca automática */}
+            <FormField
+              id="cep"
+              label="CEP"
+              type="text"
+              value={formData.cep}
+              onChange={handleInputChange('cep')}
+              placeholder="00000-000"
+              required
+            />
+            {error && (
+              <p className="text-sm text-red-500">{error}</p>
+            )}
+
+            {/* ✅ Campos de Cidade e Estado automáticos */}
+            <FormField
+              id="cidade"
+              label="Cidade"
+              type="text"
+              value={formData.cidade}
+              onChange={handleInputChange('cidade')}
+              placeholder={loading ? 'Buscando...' : 'Digite sua cidade'}
+              disabled={loading}
+              required
+            />
+
+            <FormField
+              id="estado"
+              label="Estado"
+              type="text"
+              value={formData.estado}
+              onChange={handleInputChange('estado')}
+              placeholder={loading ? 'Buscando...' : 'Digite seu estado'}
+              disabled={loading}
+              required
+            />
+
+            {/* ✅ Campo de telefone */}
+            <FormField
+              id="telefone"
+              label="Telefone"
+              type="tel"
+              value={formData.telefone}
+              onChange={handleInputChange('telefone')}
+              placeholder="(11) 99999-9999"
+              required
+              validation={validators.minLength(10)}
+              helperText="Inclua DDD"
             />
 
             <FormField
@@ -122,8 +199,9 @@ const CadastroPage = () => {
               type="submit" 
               className="w-full"
               size="lg"
+              disabled={loading}
             >
-              Criar conta
+              {loading ? 'Verificando CEP...' : 'Criar conta'}
             </Button>
           </div>
 
@@ -144,4 +222,3 @@ const CadastroPage = () => {
 };
 
 export default CadastroPage;
-

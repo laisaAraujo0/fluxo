@@ -103,9 +103,9 @@ const EventFilters = ({ onFilterChange, activeFilters = {} }) => {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-6 mt-6">
+        <div className="space-y-6 mt-6 ">
           {/* Categoria */}
-          <div className="space-y-2">
+          <div className="space-y-2 pl-3">
             <Label htmlFor="categoria" className="flex items-center gap-2">
               <Tag className="h-4 w-4" />
               Categoria
@@ -128,7 +128,7 @@ const EventFilters = ({ onFilterChange, activeFilters = {} }) => {
           </div>
 
           {/* Status */}
-          <div className="space-y-2">
+          <div className="space-y-2 pl-3">
             <Label htmlFor="status" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               Status
@@ -151,7 +151,7 @@ const EventFilters = ({ onFilterChange, activeFilters = {} }) => {
           </div>
 
           {/* Data Início */}
-          <div className="space-y-2">
+          <div className="space-y-2 pl-3">
             <Label htmlFor="dataInicio">Data Início</Label>
             <Input
               id="dataInicio"
@@ -162,7 +162,7 @@ const EventFilters = ({ onFilterChange, activeFilters = {} }) => {
           </div>
 
           {/* Data Fim */}
-          <div className="space-y-2">
+          <div className="space-y-2 pl-3">
             <Label htmlFor="dataFim">Data Fim</Label>
             <Input
               id="dataFim"
@@ -173,7 +173,7 @@ const EventFilters = ({ onFilterChange, activeFilters = {} }) => {
           </div>
 
           {/* Cidade */}
-          <div className="space-y-2">
+          <div className="space-y-2 pl-3">
             <Label htmlFor="cidade" className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
               Cidade
@@ -187,7 +187,7 @@ const EventFilters = ({ onFilterChange, activeFilters = {} }) => {
           </div>
 
           {/* Raio de Distância */}
-          <div className="space-y-2">
+          <div className="space-y-2 pl-3">
             <Label htmlFor="raio">Raio de Distância</Label>
             <Select
               value={filters.raio}
