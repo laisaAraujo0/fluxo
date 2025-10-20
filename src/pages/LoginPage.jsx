@@ -10,9 +10,10 @@ import { toast } from 'sonner';
 const LoginPage = () => {
   const navigate = useNavigate();
   const { login } = useUser();
+
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
+    senha: '', // ✅ alterado de "password" para "senha"
     rememberMe: false
   });
 
@@ -24,28 +25,45 @@ const LoginPage = () => {
     }));
   };
 
+  // ✅ Função de validação de e-mail (sem depender de validators)
+  const validarEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Simular login de usuário
-    // Em produção, isso faria uma chamada à API
-    if (formData.email && formData.password) {
-      const usuario = {
-        id: 1,
-        nome: 'Beatriz Almeida',
-        email: formData.email,
-        avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCTgZH5QmaCBG5kBLgV5LYcelEsV1n08WAfNFX6QsoH9DbTLkP8ucrf4-7Igm0NH1UoG5kcADzMvkXgKUReyLL1Ylt1mfQeAiXKxq-8kyOv0OZDCBXe7iNXqAHcy3Ja3k9cmZ00vEaGUMXjbz6B0qdxeDpoAZIpV9D3iYmU9KF6j9rWwDW9rw9mgFvsBX6z23vT8c0oxB2fz-w99BEBxjt_MKc539cD4RgfhbwnIK0ZIBNvDqoAQhHiD_Id_lHd7vUM9BY49RYikIA',
-        tipo: 'usuario',
-        isAdmin: false,
-        dataCriacao: new Date().toISOString(),
-        ativo: true
-      };
 
-      login(usuario);
-      toast.success('Login realizado com sucesso!');
+    // 🔍 Validação do e-mail
+    if (!validarEmail(formData.email)) {
+      toast.error('Digite um e-mail válido');
+      return;
+    }
+
+    // 🔍 Validação da senha
+    if (formData.senha.length < 6) {
+      toast.error('A senha deve ter no mínimo 6 caracteres');
+      return;
+    }
+
+    // 🔍 Buscar usuário salvo
+    const usuarioSalvo = JSON.parse(localStorage.getItem('usuario'));
+
+    if (!usuarioSalvo) {
+      toast.error('Nenhum usuário cadastrado. Faça o cadastro primeiro.');
+      return;
+    }
+
+    // 🔍 Comparar e-mail e senha salvos
+    if (
+      usuarioSalvo.email === formData.email &&
+      usuarioSalvo.senha === formData.senha
+    ) {
+      login(usuarioSalvo);
+      toast.success(`Bem-vindo, ${usuarioSalvo.nome}!`);
       navigate('/');
     } else {
-      toast.error('Por favor, preencha todos os campos');
+      toast.error('Email ou senha incorretos');
     }
   };
 
@@ -71,31 +89,32 @@ const LoginPage = () => {
           <div className="space-y-4">
             <div>
               <Label htmlFor="email">
-                Email ou nome de usuário
+                Email
               </Label>
               <Input
                 id="email"
                 name="email"
-                type="text"
+                type="email"
                 autoComplete="email"
                 required
-                placeholder="Digite seu email ou usuário"
+                placeholder="Digite seu e-mail"
                 value={formData.email}
                 onChange={handleInputChange}
               />
             </div>
+
             <div>
-              <Label htmlFor="password">
+              <Label htmlFor="senha">
                 Senha
               </Label>
               <Input
-                id="password"
-                name="password"
+                id="senha"
+                name="senha" // ✅ nome ajustado
                 type="password"
                 autoComplete="current-password"
                 required
                 placeholder="Digite sua senha"
-                value={formData.password}
+                value={formData.senha}
                 onChange={handleInputChange}
               />
             </div>
@@ -107,7 +126,7 @@ const LoginPage = () => {
                 id="rememberMe"
                 name="rememberMe"
                 checked={formData.rememberMe}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   setFormData(prev => ({ ...prev, rememberMe: checked }))
                 }
               />
@@ -125,11 +144,9 @@ const LoginPage = () => {
             </div>
           </div>
 
-          <div>
-            <Button type="submit" className="w-full">
-              Entrar
-            </Button>
-          </div>
+          <Button type="submit" className="w-full">
+            Entrar
+          </Button>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">

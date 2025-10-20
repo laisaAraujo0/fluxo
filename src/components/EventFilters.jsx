@@ -95,7 +95,7 @@ const EventFilters = ({ onFilterChange, activeFilters = {} }) => {
         </Button>
       </SheetTrigger>
       
-      <SheetContent>
+      <SheetContent className="z-[3000] fixed">
         <SheetHeader>
           <SheetTitle>Filtros Avançados</SheetTitle>
           <SheetDescription>

@@ -29,6 +29,7 @@ export const UserProvider = ({ children }) => {
   const login = (userData) => {
     const userWithLogin = { 
       ...userData, 
+      nome: userData.nome || userData.name || 'Usuário',
       isLoggedIn: true 
     };
     setUser(userWithLogin);

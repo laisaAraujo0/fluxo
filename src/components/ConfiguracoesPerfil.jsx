@@ -162,13 +162,13 @@ const ConfiguracoesPerfil = ({ userData, setUserData, onVoltar, initialSection =
               <div 
                 className="h-24 w-24 rounded-full bg-cover bg-center ring-4 ring-background"
                 style={{
-                  backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCTgZH5QmaCBG5kBLgV5LYcelEsV1n08WAfNFX6QsoH9DbTLkP8ucrf4-7Igm0NH1UoG5kcADzMvkXgKUReyLL1Ylt1mfQeAiXKxq-8kyOv0OZDCBXe7iNXqAHcy3Ja3k9cmZ00vEaGUMXjbz6B0qdxeDpoAZIpV9D3iYmU9KF6j9rWwDW9rw9mgFvsBX6z23vT8c0oxB2fz-w99BEBxjt_MKc539cD4RgfhbwnIK0ZIBNvDqoAQhHiD_Id_lHd7vUM9BY49RYikIA")'
-                }}
+                   backgroundImage: `url(${userData.profilePic || "https://via.placeholder.com/150"})`
+          }}
               />
             </div>
             <div className="flex flex-col">
-              <h2 className="text-2xl font-bold text-foreground">Beatriz Almeida</h2>
-              <p className="text-sm text-muted-foreground">@beatriz.almeida</p>
+              <h2 className="text-2xl font-bold text-foreground"> {userData?.nome || 'Usuário'}</h2>
+              <p className="text-sm text-muted-foreground">{userData?.email || '@usuario'}</p>
             </div>
 
             {/* Menu de navegação */}

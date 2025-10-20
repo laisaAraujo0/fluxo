@@ -1,331 +1,257 @@
-import { query } from '../config/database.js';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
-// Criar novo evento
+// Criar evento
 export const criarEvento = async (req, res) => {
   try {
-    const {
-      titulo,
-      descricao,
-      categoria,
-      prioridade,
-      latitude,
-      longitude,
-      endereco,
-      cidade,
-      estado,
-      cep,
-      imagens,
-    } = req.body;
+    const { title, description, location, category, imageUrl } = req.body;
+    const authorId = req.usuario?.id;
 
-    const resultado = await query(
-      `INSERT INTO eventos (usuario_id, titulo, descricao, categoria, prioridade, latitude, longitude, endereco, cidade, estado, cep, imagens)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-       RETURNING *`,
-      [
-        req.usuario.id,
-        titulo,
-        descricao,
-        categoria,
-        prioridade || 'media',
-        latitude,
-        longitude,
-        endereco,
-        cidade,
-        estado,
-        cep,
-        imagens || [],
-      ]
-    );
+    if (!authorId) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
 
-    res.status(201).json({
-      mensagem: 'Evento criado com sucesso',
-      evento: resultado.rows[0],
+    const evento = await prisma.event.create({
+      data: {
+        title,
+        description,
+        location,
+        category,
+        imageUrl,
+        authorId,
+        status: 'PENDING',
+      },
+      include: {
+        author: { select: { id: true, name: true, email: true } },
+      },
+    });
+
+    return res.status(201).json({
+      message: 'Evento criado com sucesso',
+      evento,
     });
   } catch (error) {
     console.error('Erro ao criar evento:', error);
-    res.status(500).json({ erro: 'Erro ao criar evento' });
+    return res.status(500).json({ error: 'Erro ao criar evento' });
   }
 };
 
-// Listar todos os eventos
+// Listar eventos (com filtros e paginação)
 export const listarEventos = async (req, res) => {
   try {
-    const { categoria, status, cidade, estado, limite = 50, pagina = 1 } = req.query;
+    const { category, status, cidade, estado, limite = 20, pagina = 1 } = req.query;
 
-    let queryText = `
-      SELECT e.*, u.nome as usuario_nome, u.email as usuario_email
-      FROM eventos e
-      LEFT JOIN usuarios u ON e.usuario_id = u.id
-      WHERE 1=1
-    `;
-    const params = [];
-    let paramCount = 1;
+    const take = Math.min(parseInt(limite, 10) || 20, 100);
+    const skip = (Math.max(parseInt(pagina, 10), 1) - 1) * take;
 
-    if (categoria) {
-      queryText += ` AND e.categoria = $${paramCount}`;
-      params.push(categoria);
-      paramCount++;
-    }
+    const where = {};
+    if (category) where.category = category;
+    if (status) where.status = status;
 
-    if (status) {
-      queryText += ` AND e.status = $${paramCount}`;
-      params.push(status);
-      paramCount++;
-    }
+    const [eventos, total] = await Promise.all([
+      prisma.event.findMany({
+        where,
+        include: {
+          author: { select: { id: true, name: true, email: true, cidade: true, estado: true } },
+          comments: true,
+          likes: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take,
+        skip,
+      }),
+      prisma.event.count({ where }),
+    ]);
 
-    if (cidade) {
-      queryText += ` AND e.cidade ILIKE $${paramCount}`;
-      params.push(`%${cidade}%`);
-      paramCount++;
-    }
-
-    if (estado) {
-      queryText += ` AND e.estado = $${paramCount}`;
-      params.push(estado);
-      paramCount++;
-    }
-
-    queryText += ` ORDER BY e.criado_em DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
-    params.push(parseInt(limite));
-    params.push((parseInt(pagina) - 1) * parseInt(limite));
-
-    const resultado = await query(queryText, params);
-
-    // Contar total de eventos
-    let countQuery = 'SELECT COUNT(*) FROM eventos WHERE 1=1';
-    const countParams = [];
-    let countParamCount = 1;
-
-    if (categoria) {
-      countQuery += ` AND categoria = $${countParamCount}`;
-      countParams.push(categoria);
-      countParamCount++;
-    }
-
-    if (status) {
-      countQuery += ` AND status = $${countParamCount}`;
-      countParams.push(status);
-      countParamCount++;
-    }
-
-    if (cidade) {
-      countQuery += ` AND cidade ILIKE $${countParamCount}`;
-      countParams.push(`%${cidade}%`);
-      countParamCount++;
-    }
-
-    if (estado) {
-      countQuery += ` AND estado = $${countParamCount}`;
-      countParams.push(estado);
-    }
-
-    const countResult = await query(countQuery, countParams);
-    const total = parseInt(countResult.rows[0].count);
-
-    res.json({
-      eventos: resultado.rows,
+    return res.json({
+      eventos,
       total,
       pagina: parseInt(pagina),
-      totalPaginas: Math.ceil(total / parseInt(limite)),
+      totalPaginas: Math.ceil(total / take),
     });
   } catch (error) {
     console.error('Erro ao listar eventos:', error);
-    res.status(500).json({ erro: 'Erro ao listar eventos' });
+    return res.status(500).json({ error: 'Erro ao listar eventos' });
   }
 };
 
-// Obter evento por ID
+// Obter evento por ID (com comentários)
 export const obterEvento = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Incrementar visualizações
-    await query('UPDATE eventos SET visualizacoes = visualizacoes + 1 WHERE id = $1', [id]);
+    const evento = await prisma.event.findUnique({
+      where: { id },
+      include: {
+        author: { select: { id: true, name: true, email: true } },
+        comments: {
+          include: {
+            author: { select: { id: true, name: true, avatar: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+        likes: true,
+      },
+    });
 
-    const resultado = await query(
-      `SELECT e.*, u.nome as usuario_nome, u.email as usuario_email
-       FROM eventos e
-       LEFT JOIN usuarios u ON e.usuario_id = u.id
-       WHERE e.id = $1`,
-      [id]
-    );
+    if (!evento) return res.status(404).json({ error: 'Evento não encontrado' });
 
-    if (resultado.rows.length === 0) {
-      return res.status(404).json({ erro: 'Evento não encontrado' });
-    }
-
-    // Buscar comentários
-    const comentarios = await query(
-      `SELECT c.*, u.nome as usuario_nome
-       FROM comentarios c
-       LEFT JOIN usuarios u ON c.usuario_id = u.id
-       WHERE c.evento_id = $1
-       ORDER BY c.criado_em DESC`,
-      [id]
-    );
-
-    const evento = resultado.rows[0];
-    evento.comentarios = comentarios.rows;
-
-    res.json(evento);
+    return res.json(evento);
   } catch (error) {
     console.error('Erro ao obter evento:', error);
-    res.status(500).json({ erro: 'Erro ao obter evento' });
+    return res.status(500).json({ error: 'Erro ao obter evento' });
   }
 };
 
-// Atualizar evento
+// Atualizar evento (somente o autor)
 export const atualizarEvento = async (req, res) => {
   try {
     const { id } = req.params;
-    const { titulo, descricao, categoria, status, prioridade } = req.body;
+    const authorId = req.usuario?.id;
 
-    const resultado = await query(
-      `UPDATE eventos
-       SET titulo = $1, descricao = $2, categoria = $3, status = $4, prioridade = $5, atualizado_em = CURRENT_TIMESTAMP
-       WHERE id = $6 AND usuario_id = $7
-       RETURNING *`,
-      [titulo, descricao, categoria, status, prioridade, id, req.usuario.id]
-    );
+    const { title, description, location, category, status, imageUrl } = req.body;
 
-    if (resultado.rows.length === 0) {
-      return res.status(404).json({ erro: 'Evento não encontrado ou sem permissão' });
-    }
+    const evento = await prisma.event.findUnique({ where: { id } });
 
-    res.json({
-      mensagem: 'Evento atualizado com sucesso',
-      evento: resultado.rows[0],
+    if (!evento) return res.status(404).json({ error: 'Evento não encontrado' });
+    if (evento.authorId !== authorId)
+      return res.status(403).json({ error: 'Sem permissão para editar este evento' });
+
+    const eventoAtualizado = await prisma.event.update({
+      where: { id },
+      data: { title, description, location, category, status, imageUrl },
+    });
+
+    return res.json({
+      message: 'Evento atualizado com sucesso',
+      evento: eventoAtualizado,
     });
   } catch (error) {
     console.error('Erro ao atualizar evento:', error);
-    res.status(500).json({ erro: 'Erro ao atualizar evento' });
+    return res.status(500).json({ error: 'Erro ao atualizar evento' });
   }
 };
 
-// Deletar evento
+// Deletar evento (somente o autor)
 export const deletarEvento = async (req, res) => {
   try {
     const { id } = req.params;
+    const authorId = req.usuario?.id;
 
-    const resultado = await query(
-      'DELETE FROM eventos WHERE id = $1 AND usuario_id = $2 RETURNING id',
-      [id, req.usuario.id]
-    );
+    const evento = await prisma.event.findUnique({ where: { id } });
+    if (!evento) return res.status(404).json({ error: 'Evento não encontrado' });
+    if (evento.authorId !== authorId)
+      return res.status(403).json({ error: 'Sem permissão para deletar este evento' });
 
-    if (resultado.rows.length === 0) {
-      return res.status(404).json({ erro: 'Evento não encontrado ou sem permissão' });
-    }
+    await prisma.event.delete({ where: { id } });
 
-    res.json({ mensagem: 'Evento deletado com sucesso' });
+    return res.json({ message: 'Evento deletado com sucesso' });
   } catch (error) {
     console.error('Erro ao deletar evento:', error);
-    res.status(500).json({ erro: 'Erro ao deletar evento' });
-  }
-};
-
-// Votar em evento
-export const votarEvento = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { tipo } = req.body; // 'up' ou 'down'
-
-    // Verificar se já votou
-    const votoExistente = await query(
-      'SELECT * FROM votos WHERE evento_id = $1 AND usuario_id = $2',
-      [id, req.usuario.id]
-    );
-
-    if (votoExistente.rows.length > 0) {
-      // Atualizar voto
-      await query('UPDATE votos SET tipo = $1 WHERE evento_id = $2 AND usuario_id = $3', [
-        tipo,
-        id,
-        req.usuario.id,
-      ]);
-    } else {
-      // Inserir novo voto
-      await query('INSERT INTO votos (evento_id, usuario_id, tipo) VALUES ($1, $2, $3)', [
-        id,
-        req.usuario.id,
-        tipo,
-      ]);
-    }
-
-    // Atualizar contagem de votos
-    const votos = await query(
-      `SELECT 
-        COUNT(CASE WHEN tipo = 'up' THEN 1 END) - COUNT(CASE WHEN tipo = 'down' THEN 1 END) as total
-       FROM votos WHERE evento_id = $1`,
-      [id]
-    );
-
-    await query('UPDATE eventos SET votos = $1 WHERE id = $2', [votos.rows[0].total, id]);
-
-    res.json({
-      mensagem: 'Voto registrado com sucesso',
-      votos: parseInt(votos.rows[0].total),
-    });
-  } catch (error) {
-    console.error('Erro ao votar:', error);
-    res.status(500).json({ erro: 'Erro ao votar' });
+    return res.status(500).json({ error: 'Erro ao deletar evento' });
   }
 };
 
 // Adicionar comentário
 export const adicionarComentario = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { texto } = req.body;
+    const { id } = req.params; // id do evento
+    const { content } = req.body;
+    const authorId = req.usuario?.id;
 
-    const resultado = await query(
-      `INSERT INTO comentarios (evento_id, usuario_id, texto)
-       VALUES ($1, $2, $3)
-       RETURNING *`,
-      [id, req.usuario.id, texto]
-    );
+    if (!content) return res.status(400).json({ error: 'Comentário não pode ser vazio' });
 
-    res.status(201).json({
-      mensagem: 'Comentário adicionado com sucesso',
-      comentario: resultado.rows[0],
+    const comentario = await prisma.comment.create({
+      data: {
+        content,
+        eventId: id,
+        authorId,
+      },
+      include: {
+        author: { select: { id: true, name: true, avatar: true } },
+      },
+    });
+
+    return res.status(201).json({
+      message: 'Comentário adicionado com sucesso',
+      comentario,
     });
   } catch (error) {
     console.error('Erro ao adicionar comentário:', error);
-    res.status(500).json({ erro: 'Erro ao adicionar comentário' });
+    return res.status(500).json({ error: 'Erro ao adicionar comentário' });
   }
 };
 
-// Obter estatísticas
+// Curtir / Descurtir evento
+export const votarEvento = async (req, res) => {
+  try {
+    const { id } = req.params; // eventId
+    const userId = req.usuario?.id;
+
+    if (!userId) return res.status(401).json({ error: 'Usuário não autenticado' });
+
+    const likeExistente = await prisma.like.findUnique({
+      where: {
+        userId_eventId: { userId, eventId: id },
+      },
+    });
+
+    if (likeExistente) {
+      await prisma.like.delete({
+        where: { userId_eventId: { userId, eventId: id } },
+      });
+      return res.json({ message: 'Curtida removida com sucesso' });
+    }
+
+    await prisma.like.create({
+      data: {
+        userId,
+        eventId: id,
+      },
+    });
+
+    return res.json({ message: 'Evento curtido com sucesso' });
+  } catch (error) {
+    console.error('Erro ao curtir evento:', error);
+    return res.status(500).json({ error: 'Erro ao curtir evento' });
+  }
+};
+
+// Estatísticas (admin / gerais)
 export const obterEstatisticas = async (req, res) => {
   try {
-    const totalEventos = await query('SELECT COUNT(*) FROM eventos');
-    const eventosPendentes = await query("SELECT COUNT(*) FROM eventos WHERE status = 'pendente'");
-    const eventosResolvidos = await query("SELECT COUNT(*) FROM eventos WHERE status = 'resolvido'");
-    const totalUsuarios = await query('SELECT COUNT(*) FROM usuarios');
+    const totalEventos = await prisma.event.count();
+    const pendentes = await prisma.event.count({ where: { status: 'PENDING' } });
+    const resolvidos = await prisma.event.count({ where: { status: 'RESOLVED' } });
+    const totalUsuarios = await prisma.user.count();
 
-    const eventosPorCategoria = await query(`
-      SELECT categoria, COUNT(*) as total
-      FROM eventos
-      GROUP BY categoria
-      ORDER BY total DESC
-    `);
+    const eventosPorCategoria = await prisma.event.groupBy({
+      by: ['category'],
+      _count: { category: true },
+      orderBy: { _count: { category: 'desc' } },
+    });
 
-    const eventosPorStatus = await query(`
-      SELECT status, COUNT(*) as total
-      FROM eventos
-      GROUP BY status
-    `);
+    const eventosPorStatus = await prisma.event.groupBy({
+      by: ['status'],
+      _count: { status: true },
+    });
 
-    res.json({
-      totalEventos: parseInt(totalEventos.rows[0].count),
-      eventosPendentes: parseInt(eventosPendentes.rows[0].count),
-      eventosResolvidos: parseInt(eventosResolvidos.rows[0].count),
-      totalUsuarios: parseInt(totalUsuarios.rows[0].count),
-      eventosPorCategoria: eventosPorCategoria.rows,
-      eventosPorStatus: eventosPorStatus.rows,
+    return res.json({
+      totalEventos,
+      pendentes,
+      resolvidos,
+      totalUsuarios,
+      eventosPorCategoria: eventosPorCategoria.map((c) => ({
+        categoria: c.category,
+        total: c._count.category,
+      })),
+      eventosPorStatus: eventosPorStatus.map((s) => ({
+        status: s.status,
+        total: s._count.status,
+      })),
     });
   } catch (error) {
     console.error('Erro ao obter estatísticas:', error);
-    res.status(500).json({ erro: 'Erro ao obter estatísticas' });
+    return res.status(500).json({ error: 'Erro ao obter estatísticas' });
   }
 };
-

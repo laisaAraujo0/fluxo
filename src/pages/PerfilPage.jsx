@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ConfiguracoesPerfil from '@/components/ConfiguracoesPerfil';
-import NotificationCenter from '@/components/NotificationCenter';
 import LocationPreferences from '@/components/LocationPreferences';
 import EventCard from '@/components/EventCard';
 import { useUser } from '@/contexts/UserContext';
@@ -223,7 +222,7 @@ const PerfilPage = () => {
 
       {/* Navegação por abas */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="eventos">
             Eventos ({userStats.eventosCreated || 0})
           </TabsTrigger>
@@ -235,9 +234,6 @@ const PerfilPage = () => {
           </TabsTrigger>
           <TabsTrigger value="atividades">
             Atividades
-          </TabsTrigger>
-          <TabsTrigger value="configuracoes">
-            Configurações
           </TabsTrigger>
         </TabsList>
 
@@ -388,34 +384,6 @@ const PerfilPage = () => {
                 </CardContent>
               </Card>
             )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="configuracoes" className="mt-8">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Notificações</CardTitle>
-                <CardDescription>
-                  Gerencie suas preferências de notificação
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <NotificationCenter />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Preferências de Localização</CardTitle>
-                <CardDescription>
-                  Configure suas preferências de localização para eventos
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <LocationPreferences />
-              </CardContent>
-            </Card>
           </div>
         </TabsContent>
       </Tabs>

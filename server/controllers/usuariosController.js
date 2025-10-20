@@ -1,46 +1,63 @@
-import { query } from '../config/database.js';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fluxo-secret-key-2024';
+const prisma = new PrismaClient();
+const JWT_SECRET = process.env.JWT_SECRET || "fluxo-secret-key-2024";
 
 // Registrar novo usuário
 export const registrarUsuario = async (req, res) => {
   try {
-    const { nome, email, senha, tipo, telefone, cpf, endereco, cidade, estado, cep } = req.body;
+    const { nome, email, senha, username, avatar, bio, cidade, estado, telefone, status } = req.body;
 
-    // Verificar se o email já existe
-    const usuarioExistente = await query('SELECT * FROM usuarios WHERE email = $1', [email]);
-    if (usuarioExistente.rows.length > 0) {
-      return res.status(400).json({ erro: 'Email já cadastrado' });
+    // Verificar se email ou username já existem
+    const usuarioExistente = await prisma.user.findFirst({
+      where: { OR: [{ email }, { username }] },
+    });
+
+    if (usuarioExistente) {
+      return res.status(400).json({ erro: "Email ou username já cadastrados" });
     }
 
     // Hash da senha
     const senhaHash = await bcrypt.hash(senha, 10);
 
-    // Inserir usuário
-    const resultado = await query(
-      `INSERT INTO usuarios (nome, email, senha, tipo, telefone, cpf, endereco, cidade, estado, cep)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-       RETURNING id, nome, email, tipo, criado_em`,
-      [nome, email, senhaHash, tipo || 'cidadao', telefone, cpf, endereco, cidade, estado, cep]
-    );
-
-    const usuario = resultado.rows[0];
+    // Criar usuário
+    const usuario = await prisma.user.create({
+      data: {
+        nome,
+        email,
+        username,
+        avatar,
+        bio,
+        cidade,
+        estado,
+        telefone,
+        status: status || "ACTIVE",
+        senha: senhaHash,
+      },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        username: true,
+        avatar: true,
+        bio: true,
+        cidade: true,
+        estado: true,
+        telefone: true,
+        status: true,
+        createdAt: true,
+      },
+    });
 
     // Gerar token JWT
-    const token = jwt.sign({ id: usuario.id, email: usuario.email, tipo: usuario.tipo }, JWT_SECRET, {
-      expiresIn: '7d',
-    });
+    const token = jwt.sign({ id: usuario.id, email: usuario.email }, JWT_SECRET, { expiresIn: "7d" });
 
-    res.status(201).json({
-      mensagem: 'Usuário registrado com sucesso',
-      usuario,
-      token,
-    });
+    res.status(201).json({ mensagem: "Usuário registrado com sucesso", usuario, token });
   } catch (error) {
-    console.error('Erro ao registrar usuário:', error);
-    res.status(500).json({ erro: 'Erro ao registrar usuário' });
+    console.error("Erro ao registrar usuário:", error);
+    res.status(500).json({ erro: "Erro ao registrar usuário" });
   }
 };
 
@@ -49,71 +66,67 @@ export const loginUsuario = async (req, res) => {
   try {
     const { email, senha } = req.body;
 
-    // Buscar usuário
-    const resultado = await query('SELECT * FROM usuarios WHERE email = $1', [email]);
-    if (resultado.rows.length === 0) {
-      return res.status(401).json({ erro: 'Email ou senha inválidos' });
-    }
+    const usuario = await prisma.user.findUnique({ where: { email } });
 
-    const usuario = resultado.rows[0];
+    if (!usuario) return res.status(401).json({ erro: "Email ou senha inválidos" });
 
-    // Verificar senha
     const senhaValida = await bcrypt.compare(senha, usuario.senha);
-    if (!senhaValida) {
-      return res.status(401).json({ erro: 'Email ou senha inválidos' });
-    }
+    if (!senhaValida) return res.status(401).json({ erro: "Email ou senha inválidos" });
 
-    // Gerar token JWT
-    const token = jwt.sign({ id: usuario.id, email: usuario.email, tipo: usuario.tipo }, JWT_SECRET, {
-      expiresIn: '7d',
-    });
+    const token = jwt.sign({ id: usuario.id, email: usuario.email }, JWT_SECRET, { expiresIn: "7d" });
 
-    // Remover senha do objeto de resposta
-    delete usuario.senha;
+    const { senha: _, ...usuarioSemSenha } = usuario;
 
-    res.json({
-      mensagem: 'Login realizado com sucesso',
-      usuario,
-      token,
-    });
+    res.json({ mensagem: "Login realizado com sucesso", usuario: usuarioSemSenha, token });
   } catch (error) {
-    console.error('Erro ao fazer login:', error);
-    res.status(500).json({ erro: 'Erro ao fazer login' });
+    console.error("Erro ao fazer login:", error);
+    res.status(500).json({ erro: "Erro ao fazer login" });
   }
 };
 
 // Obter perfil do usuário
 export const obterPerfil = async (req, res) => {
   try {
-    const resultado = await query(
-      `SELECT id, nome, email, tipo, telefone, cpf, endereco, cidade, estado, cep, bio, avatar,
-              perfil_publico, mostrar_email, mostrar_cidade, mostrar_telefone,
-              notificacao_comentarios, notificacao_mencoes, notificacao_seguidores, criado_em 
-       FROM usuarios WHERE id = $1`,
-      [req.usuario.id]
-    );
+    const usuario = await prisma.user.findUnique({
+      where: { id: req.usuario.id },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        username: true,
+        avatar: true,
+        bio: true,
+        cidade: true,
+        estado: true,
+        telefone: true,
+        perfilPublico: true,
+        mostrarEmail: true,
+        mostrarCidade: true,
+        mostrarTelefone: true,
+        notificacaoComentarios: true,
+        notificacaoMencoes: true,
+        notificacaoSeguidores: true,
+        createdAt: true,
+      },
+    });
 
-    if (resultado.rows.length === 0) {
-      return res.status(404).json({ erro: 'Usuário não encontrado' });
-    }
+    if (!usuario) return res.status(404).json({ erro: "Usuário não encontrado" });
 
-    res.json(resultado.rows[0]);
+    res.json(usuario);
   } catch (error) {
-    console.error('Erro ao obter perfil:', error);
-    res.status(500).json({ erro: 'Erro ao obter perfil' });
+    console.error("Erro ao obter perfil:", error);
+    res.status(500).json({ erro: "Erro ao obter perfil" });
   }
 };
 
 // Atualizar perfil do usuário
 export const atualizarPerfil = async (req, res) => {
   try {
-    const { 
-      nome, 
-      telefone, 
-      endereco, 
-      cidade, 
-      estado, 
-      cep, 
+    const {
+      nome,
+      telefone,
+      cidade,
+      estado,
       bio,
       avatar,
       perfilPublico,
@@ -122,67 +135,91 @@ export const atualizarPerfil = async (req, res) => {
       mostrarTelefone,
       notificacaoComentarios,
       notificacaoMencoes,
-      notificacaoSeguidores
+      notificacaoSeguidores,
     } = req.body;
 
-    const resultado = await query(
-      `UPDATE usuarios 
-       SET nome = $1, telefone = $2, endereco = $3, cidade = $4, estado = $5, cep = $6, 
-           bio = $7, avatar = $8, perfil_publico = $9, mostrar_email = $10, mostrar_cidade = $11,
-           mostrar_telefone = $12, notificacao_comentarios = $13, notificacao_mencoes = $14,
-           notificacao_seguidores = $15, atualizado_em = CURRENT_TIMESTAMP
-       WHERE id = $16
-       RETURNING id, nome, email, tipo, telefone, endereco, cidade, estado, cep, bio, avatar,
-                 perfil_publico, mostrar_email, mostrar_cidade, mostrar_telefone,
-                 notificacao_comentarios, notificacao_mencoes, notificacao_seguidores`,
-      [nome, telefone, endereco, cidade, estado, cep, bio, avatar, perfilPublico, mostrarEmail, 
-       mostrarCidade, mostrarTelefone, notificacaoComentarios, notificacaoMencoes, 
-       notificacaoSeguidores, req.usuario.id]
-    );
-
-    if (resultado.rows.length === 0) {
-      return res.status(404).json({ erro: 'Usuário não encontrado' });
-    }
-
-    res.json({
-      mensagem: 'Perfil atualizado com sucesso',
-      usuario: resultado.rows[0],
+    const usuarioAtualizado = await prisma.user.update({
+      where: { id: req.usuario.id },
+      data: {
+        nome,
+        telefone,
+        cidade,
+        estado,
+        bio,
+        avatar,
+        perfilPublico,
+        mostrarEmail,
+        mostrarCidade,
+        mostrarTelefone,
+        notificacaoComentarios,
+        notificacaoMencoes,
+        notificacaoSeguidores,
+      },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        username: true,
+        avatar: true,
+        bio: true,
+        cidade: true,
+        estado: true,
+        telefone: true,
+        perfilPublico: true,
+        mostrarEmail: true,
+        mostrarCidade: true,
+        mostrarTelefone: true,
+        notificacaoComentarios: true,
+        notificacaoMencoes: true,
+        notificacaoSeguidores: true,
+        updatedAt: true,
+      },
     });
+
+    res.json({ mensagem: "Perfil atualizado com sucesso", usuario: usuarioAtualizado });
   } catch (error) {
-    console.error('Erro ao atualizar perfil:', error);
-    res.status(500).json({ erro: 'Erro ao atualizar perfil' });
+    console.error("Erro ao atualizar perfil:", error);
+    res.status(500).json({ erro: "Erro ao atualizar perfil" });
   }
 };
 
 // Listar todos os usuários (admin)
 export const listarUsuarios = async (req, res) => {
   try {
-    const resultado = await query(
-      'SELECT id, nome, email, tipo, telefone, cidade, estado, criado_em FROM usuarios ORDER BY criado_em DESC'
-    );
+    const usuarios = await prisma.user.findMany({
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        username: true,
+        telefone: true,
+        cidade: true,
+        estado: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
-    res.json(resultado.rows);
+    res.json(usuarios);
   } catch (error) {
-    console.error('Erro ao listar usuários:', error);
-    res.status(500).json({ erro: 'Erro ao listar usuários' });
+    console.error("Erro ao listar usuários:", error);
+    res.status(500).json({ erro: "Erro ao listar usuários" });
   }
 };
 
-// Deletar usuário
+// Deletar usuário (admin)
 export const deletarUsuario = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const resultado = await query('DELETE FROM usuarios WHERE id = $1 RETURNING id', [id]);
+    const usuarioDeletado = await prisma.user.delete({
+      where: { id },
+      select: { id: true },
+    });
 
-    if (resultado.rows.length === 0) {
-      return res.status(404).json({ erro: 'Usuário não encontrado' });
-    }
-
-    res.json({ mensagem: 'Usuário deletado com sucesso' });
+    res.json({ mensagem: "Usuário deletado com sucesso", usuario: usuarioDeletado });
   } catch (error) {
-    console.error('Erro ao deletar usuário:', error);
-    res.status(500).json({ erro: 'Erro ao deletar usuário' });
+    console.error("Erro ao deletar usuário:", error);
+    res.status(500).json({ erro: "Erro ao deletar usuário" });
   }
 };
-

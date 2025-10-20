@@ -48,33 +48,66 @@ const CadastroPage = () => {
   };
 
   // ✅ Envio do formulário
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  // ✅ Envio do formulário com validação
+const handleSubmit = (e) => {
+  e.preventDefault();
 
-    if (formData.senha !== formData.confirmarSenha) {
-      toast.error('As senhas não coincidem');
-      return;
-    }
+  // --- 🔍 Validação de email ---
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(formData.email)) {
+    toast.error('Por favor, insira um email válido');
+    return;
+  }
 
-    const novoUsuario = {
-      id: Date.now(),
-      nome: formData.nome,
-      email: formData.email,
-      telefone: formData.telefone,
-      cidade: formData.cidade,
-      estado: formData.estado,
-      cep: formData.cep,
-      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.nome)}&background=random`,
-      tipo: 'usuario',
-      isAdmin: false,
-      dataCriacao: new Date().toISOString(),
-      ativo: true
-    };
+  // --- 🔐 Validação de senha ---
+  if (formData.senha.length < 6) {
+    toast.error('A senha deve ter no mínimo 6 caracteres');
+    return;
+  }
+  if (!/[A-Z]/.test(formData.senha)) {
+    toast.error('A senha deve conter pelo menos uma letra maiúscula');
+    return;
+  }
+  if (!/[a-z]/.test(formData.senha)) {
+    toast.error('A senha deve conter pelo menos uma letra minúscula');
+    return;
+  }
+  if (!/[0-9]/.test(formData.senha)) {
+    toast.error('A senha deve conter pelo menos um número');
+    return;
+  }
 
-    login(novoUsuario);
-    toast.success('Cadastro realizado com sucesso!');
-    navigate('/');
-  };
+  // --- ✅ Confirmação de senha ---
+  if (formData.senha !== formData.confirmarSenha) {
+    toast.error('As senhas não coincidem');
+    return;
+  }
+
+  // --- 🧠 Criação do usuário ---
+  const novoUsuario = {
+  id: Date.now(),
+  nome: formData.nome,
+  email: formData.email,
+  senha: formData.senha, // ✅ Adiciona senha!
+  telefone: formData.telefone,
+  cidade: formData.cidade,
+  estado: formData.estado,
+  cep: formData.cep,
+  avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.nome)}&background=random`,
+  tipo: 'usuario',
+  isAdmin: false,
+  dataCriacao: new Date().toISOString(),
+  ativo: true
+};
+
+
+  // --- 💾 Salvar no localStorage e autenticar ---
+  localStorage.setItem('usuario', JSON.stringify(novoUsuario));
+  login(novoUsuario);
+
+  toast.success('Cadastro realizado com sucesso!');
+  navigate('/');
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">

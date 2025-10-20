@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Heart, MessageCircle, MapPin, Calendar, Clock, User, DollarSign, Eye } from 'lucide-react';
+import { Heart, MessageCircle, MapPin, Calendar, Clock, DollarSign, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,47 +24,30 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate }) => {
       toast.error('Você precisa estar logado para curtir eventos');
       return;
     }
-
     const updatedEvent = eventService.toggleLike(evento.id, user.id);
-    if (updatedEvent && onEventoUpdate) {
-      onEventoUpdate(updatedEvent);
-    }
+    if (updatedEvent && onEventoUpdate) onEventoUpdate(updatedEvent);
   };
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!isAuthenticated()) {
-      toast.error('Você precisa estar logado para comentar');
-      return;
-    }
-
-    if (!newComment.trim()) {
-      toast.error('Digite um comentário');
-      return;
-    }
+    if (!isAuthenticated()) return toast.error('Você precisa estar logado para comentar');
+    if (!newComment.trim()) return toast.error('Digite um comentário');
 
     setIsSubmittingComment(true);
-
     try {
       const comment = eventService.addComment(
-        evento.id, 
-        user.id, 
-        user.nome || user.name || 'Usuário', 
+        evento.id,
+        user.id,
+        user.nome || user.name || 'Usuário',
         newComment.trim()
       );
-
       if (comment) {
         setNewComment('');
         toast.success('Comentário adicionado!');
-        
-        // Atualizar o evento
         const updatedEvent = eventService.getEventById(evento.id);
-        if (updatedEvent && onEventoUpdate) {
-          onEventoUpdate(updatedEvent);
-        }
+        if (updatedEvent && onEventoUpdate) onEventoUpdate(updatedEvent);
       }
-    } catch (error) {
+    } catch {
       toast.error('Erro ao adicionar comentário');
     } finally {
       setIsSubmittingComment(false);
@@ -73,93 +56,51 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate }) => {
 
   const handleDeleteComment = (commentId) => {
     if (!isAuthenticated()) return;
-
     const success = eventService.removeComment(evento.id, commentId, user.id);
     if (success) {
       toast.success('Comentário removido');
       const updatedEvent = eventService.getEventById(evento.id);
-      if (updatedEvent && onEventoUpdate) {
-        onEventoUpdate(updatedEvent);
-      }
+      if (updatedEvent && onEventoUpdate) onEventoUpdate(updatedEvent);
     } else {
       toast.error('Erro ao remover comentário');
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'ativo':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-      case 'pendente':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-      case 'resolvido':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
-    }
-  };
+  const getStatusColor = (status) => ({
+    ativo: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+    pendente: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+    resolvido: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+  }[status] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300');
 
-  const getPriorityColor = (prioridade) => {
-    switch (prioridade) {
-      case 'alta':
-      case 'urgente':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-      case 'media':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
-      case 'baixa':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
-    }
-  };
+  const getPriorityColor = (prioridade) => ({
+    alta: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+    urgente: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+    media: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+    baixa: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+  }[prioridade] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300');
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    try {
-      return new Date(dateString).toLocaleDateString('pt-BR');
-    } catch {
-      return dateString;
-    }
-  };
-
-  const formatDateTime = (dateString) => {
-    if (!dateString) return '';
-    try {
-      return new Date(dateString).toLocaleString('pt-BR');
-    } catch {
-      return dateString;
-    }
-  };
+  const formatDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : '';
+  const formatDateTime = (d) => d ? new Date(d).toLocaleString('pt-BR') : '';
 
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-border">
-      <CardHeader className="space-y-4">
+    <Card className="flex flex-col h-full group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-border">
+      <CardHeader className="space-y-4 flex-shrink-0">
         {/* Autor e Data */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Avatar className="h-8 w-8">
               <AvatarImage src={evento.autorAvatar} />
-              <AvatarFallback>
-                {(evento.autorNome || 'U').charAt(0).toUpperCase()}
-              </AvatarFallback>
+              <AvatarFallback>{(evento.autorNome || 'U').charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="text-sm font-medium text-foreground">
-                {evento.autorNome || 'Usuário Anônimo'}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {formatDateTime(evento.createdAt)}
-              </p>
+              <p className="text-sm font-medium text-foreground">{evento.autorNome || 'Usuário Anônimo'}</p>
+              <p className="text-xs text-muted-foreground">{formatDateTime(evento.createdAt)}</p>
             </div>
           </div>
           <div className="flex gap-2">
-            <Badge className={getStatusColor(evento.status)}>
-              {evento.status}
-            </Badge>
+            <Badge className={getStatusColor(evento.status)}>{evento.status}</Badge>
             {evento.prioridade && (
-              <Badge className={getPriorityColor(evento.prioridade)}>
-                {evento.prioridade}
-              </Badge>
+              <Badge className={getPriorityColor(evento.prioridade)}>{evento.prioridade}</Badge>
             )}
           </div>
         </div>
@@ -175,35 +116,28 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate }) => {
           </div>
         )}
 
-        {/* Título e Descrição */}
-        <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+         {/* Título */}
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
             {evento.titulo}
-          </h3>
-          <p className="text-sm text-muted-foreground line-clamp-3">
-            {evento.descricao}
-          </p>
-        </div>
+            </h3>
+          </div>
+
 
         {/* Tags */}
-        {evento.tags && evento.tags.length > 0 && (
+        {evento.tags?.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {evento.tags.slice(0, 3).map((tag, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {tag}
-              </Badge>
+            {evento.tags.slice(0, 3).map((tag, i) => (
+              <Badge key={i} variant="secondary" className="text-xs">{tag}</Badge>
             ))}
             {evento.tags.length > 3 && (
-              <Badge variant="secondary" className="text-xs">
-                +{evento.tags.length - 3}
-              </Badge>
+              <Badge variant="secondary" className="text-xs">+{evento.tags.length - 3}</Badge>
             )}
           </div>
         )}
       </CardHeader>
 
-      <CardContent className="space-y-3">
-        {/* Informações do Evento */}
+      <CardContent className="flex-grow space-y-3">
         <div className="grid grid-cols-1 gap-2 text-sm">
           {evento.endereco && (
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -211,26 +145,21 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate }) => {
               <span className="line-clamp-1">{evento.endereco}</span>
             </div>
           )}
-          
           {evento.dataInicio && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4" />
               <span>
                 {formatDate(evento.dataInicio)}
-                {evento.dataFim && evento.dataFim !== evento.dataInicio && 
-                  ` - ${formatDate(evento.dataFim)}`
-                }
+                {evento.dataFim && evento.dataFim !== evento.dataInicio && ` - ${formatDate(evento.dataFim)}`}
               </span>
             </div>
           )}
-          
           {evento.horario && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <Clock className="h-4 w-4" />
               <span>{evento.horario}</span>
             </div>
           )}
-          
           {evento.preco && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <DollarSign className="h-4 w-4" />
@@ -240,8 +169,7 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate }) => {
         </div>
       </CardContent>
 
-      <CardFooter className="flex flex-col space-y-3">
-        {/* Botões de Ação */}
+      <CardFooter className="flex flex-col justify-end mt-auto space-y-3">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-4">
             <Button
@@ -278,11 +206,10 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate }) => {
           </Button>
         </div>
 
-        {/* Seção de Comentários */}
+        {/* Comentários */}
         {showComments && (
           <div className="w-full space-y-3 border-t pt-3">
-            {/* Lista de Comentários */}
-            {evento.comentarios && evento.comentarios.length > 0 && (
+            {evento.comentarios?.length > 0 && (
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {evento.comentarios.map((comment) => (
                   <div key={comment.id} className="flex items-start space-x-2 p-2 bg-muted/50 rounded">
@@ -293,13 +220,9 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate }) => {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <p className="text-xs font-medium text-foreground">
-                          {comment.userName}
-                        </p>
+                        <p className="text-xs font-medium text-foreground">{comment.userName}</p>
                         <div className="flex items-center space-x-1">
-                          <p className="text-xs text-muted-foreground">
-                            {formatDateTime(comment.createdAt)}
-                          </p>
+                          <p className="text-xs text-muted-foreground">{formatDateTime(comment.createdAt)}</p>
                           {comment.userId === user?.id && (
                             <Button
                               variant="ghost"
@@ -312,17 +235,14 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate }) => {
                           )}
                         </div>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {comment.content}
-                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">{comment.content}</p>
                     </div>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Formulário de Novo Comentário */}
-            {isAuthenticated() && (
+            {isAuthenticated() ? (
               <form onSubmit={handleCommentSubmit} className="space-y-2">
                 <Textarea
                   value={newComment}
@@ -332,18 +252,12 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate }) => {
                   disabled={isSubmittingComment}
                 />
                 <div className="flex justify-end">
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={isSubmittingComment || !newComment.trim()}
-                  >
+                  <Button type="submit" size="sm" disabled={isSubmittingComment || !newComment.trim()}>
                     {isSubmittingComment ? 'Enviando...' : 'Comentar'}
                   </Button>
                 </div>
               </form>
-            )}
-
-            {!isAuthenticated() && (
+            ) : (
               <p className="text-xs text-muted-foreground text-center py-2">
                 Faça login para comentar
               </p>
@@ -356,4 +270,3 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate }) => {
 };
 
 export default EventCard;
-

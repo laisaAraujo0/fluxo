@@ -18,7 +18,7 @@ const EventosPage = () => {
   const [currentView, setCurrentView] = useState('lista');
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(6);
+  const [itemsPerPage] = useState(1);
   const [sortBy, setSortBy] = useState('data');
   const [favoriteEvents, setFavoriteEvents] = useState(new Set());
   const [activeFilters, setActiveFilters] = useState({});
