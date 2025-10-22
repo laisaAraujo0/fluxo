@@ -748,7 +748,7 @@ const MapasPage = () => {
         </div>
 
         {/* Integração com Busca de CEP */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>Buscar Eventos por Localização</CardTitle>
             <CardDescription>
@@ -786,7 +786,7 @@ const MapasPage = () => {
               }}
             />
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </div>
   );

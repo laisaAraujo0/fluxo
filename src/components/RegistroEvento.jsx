@@ -130,7 +130,7 @@ const RegistroEvento = ({ onVoltar, onEventoAdicionado }) => {
     
     setFormData(prev => ({
       ...prev,
-      fotos: [...prev.fotos, ...validFiles]
+      fotos: prev.fotos.length === 0 ? validFiles : [...prev.fotos, ...validFiles]
     }));
     
     if (validFiles.length > 0) {

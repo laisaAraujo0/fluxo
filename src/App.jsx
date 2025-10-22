@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'; 
+import { useEffect, useState } from 'react';
 import { UserProvider, useUser } from './contexts/UserContext';
 import Layout from './components/Layout';
 import EventosPage from './pages/EventosPage';
@@ -12,42 +13,71 @@ import PerfilPage from './pages/PerfilPage';
 import AdminPage from './pages/AdminPage';
 import DashboardPage from './pages/DashboardPage';
 import NotFoundPage from './pages/NotFoundPage';
-import AdminToggle from './components/AdminToggle';
+import LoadingScreen from './components/LoadingScreen';
 import './App.css';
 
 // Componente para proteger rotas de usuário
 const ProtectedUserRoute = ({ children }) => {
   const { isAuthenticated, isAdmin } = useUser();
-  
+
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
   }
-  
+
   if (isAdmin()) {
     return <Navigate to="/admin" replace />;
   }
-  
+
   return children;
 };
 
 // Componente para proteger rotas de administrador
 const ProtectedAdminRoute = ({ children }) => {
   const { isAuthenticated, isAdmin } = useUser();
-  
+
   if (!isAuthenticated()) {
     return <Navigate to="/admin/login" replace />;
   }
-  
+
   if (!isAdmin()) {
     return <Navigate to="/" replace />;
   }
-  
+
   return children;
 };
 
+/**
+ * ScrollToTopOnNavigate
+ * - Rola automaticamente para o topo quando a rota muda
+ */
+function ScrollToTopOnNavigate() {
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [location.pathname]);
+
+  return null;
+}
+
 function AppContent() {
+  const [loading, setLoading] = useState(true);
+
+  // Tela de loading inicial
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return <LoadingScreen isVisible message="Carregando aplicação..." type="data" />;
+  }
+
   return (
     <Router>
+      {/* Garante scroll automático ao navegar entre páginas */}
+      <ScrollToTopOnNavigate />
+
       <div className="min-h-screen bg-background text-foreground">
         <Routes>
           {/* Rotas públicas de autenticação */}
@@ -55,47 +85,46 @@ function AppContent() {
           <Route path="/cadastro" element={<CadastroPage />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin/cadastro" element={<CadastroOrgaoPage />} />
-          
+
           {/* Rotas com layout */}
           <Route path="/" element={<Layout />}>
             <Route index element={<EventosPage />} />
             <Route path="eventos" element={<EventosPage />} />
             <Route path="reclamacoes" element={<ReclamacoesPage />} />
             <Route path="mapas" element={<MapasPage />} />
-            
+
             {/* Rota protegida de usuário */}
-            <Route 
-              path="perfil" 
+            <Route
+              path="perfil"
               element={
                 <ProtectedUserRoute>
                   <PerfilPage />
                 </ProtectedUserRoute>
-              } 
+              }
             />
-            
+
             {/* Rotas protegidas de administrador */}
-            <Route 
-              path="admin" 
+            <Route
+              path="admin"
               element={
                 <ProtectedAdminRoute>
                   <AdminPage />
                 </ProtectedAdminRoute>
-              } 
+              }
             />
-            <Route 
-              path="dashboard" 
+            <Route
+              path="dashboard"
               element={
                 <ProtectedAdminRoute>
                   <DashboardPage />
                 </ProtectedAdminRoute>
-              } 
+              }
             />
           </Route>
-          
-          {/* Rota 404 - deve ser a última */}
+
+          {/* Rota 404 */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
-        <AdminToggle />
       </div>
     </Router>
   );
@@ -110,4 +139,3 @@ function App() {
 }
 
 export default App;
-

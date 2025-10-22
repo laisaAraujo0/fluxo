@@ -192,10 +192,10 @@ const ReclamacoesPage = () => {
             <h3 className="text-lg font-bold text-foreground" id="problems-list-heading">
               Lista de Reclamações
             </h3>
-            <Button className="flex items-center gap-2">
+            {/* <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Reportar Reclamação
-            </Button>
+            </Button> */}
           </div>
 
           <div className="overflow-x-auto rounded-xl border border-border bg-card">

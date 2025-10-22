@@ -18,7 +18,7 @@ const EventosPage = () => {
   const [currentView, setCurrentView] = useState('lista');
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(1);
+  const [itemsPerPage] = useState(3);
   const [sortBy, setSortBy] = useState('data');
   const [favoriteEvents, setFavoriteEvents] = useState(new Set());
   const [activeFilters, setActiveFilters] = useState({});
@@ -242,7 +242,7 @@ const EventosPage = () => {
         </div>
 
         {/* Filtros Avançados */}
-        <EventFilters onFiltersChange={handleFiltersChange} />
+        <EventFilters onFiltersApply={handleFiltersChange} />
       </div>
 
       {/* Lista de Eventos */}

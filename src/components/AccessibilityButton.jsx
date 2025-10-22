@@ -4,9 +4,32 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import AccessibilityPanel from './AccessibilityPanel';
 
+// Constantes para as classes CSS
+const ACCESSIBILITY_BUTTON_CLASS = "fixed right-4 top-1/3 z-30 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-primary hover:bg-primary/90 flex items-center justify-center";
+
 const AccessibilityButton = () => {
   const [showPanel, setShowPanel] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+
+  // Função para aplicar/remover classes no body
+  const applyBodyClass = (className, shouldApply) => {
+    const body = document.body;
+    if (shouldApply) {
+      body.classList.add(className);
+    } else {
+      body.classList.remove(className);
+    }
+  };
+
+  // Carregar configurações iniciais e aplicar classes
+  useEffect(() => {
+    const savedSettings = JSON.parse(localStorage.getItem('accessibilitySettings') || '{}');
+    applyBodyClass('dark-mode', savedSettings.darkMode);
+    applyBodyClass('high-contrast', savedSettings.highContrast);
+    if (savedSettings.fontSize) {
+      document.documentElement.style.fontSize = `${savedSettings.fontSize}%`;
+    }
+  }, []);
 
   // Verificar se deve mostrar o botão baseado na rota atual
   useEffect(() => {
@@ -18,7 +41,7 @@ const AccessibilityButton = () => {
 
     checkRoute();
     
-    // Escutar mudanças de rota
+    // Escutar mudanças de rota (melhorar para usar um listener de router se possível)
     const handlePopState = () => checkRoute();
     window.addEventListener('popstate', handlePopState);
     
@@ -32,41 +55,40 @@ const AccessibilityButton = () => {
       if (event.altKey && event.key === 'a') {
         event.preventDefault();
         setShowPanel(prev => !prev);
-      }
-      
-      // Alt + C para alto contraste
-      if (event.altKey && event.key === 'c') {
-        event.preventDefault();
-        const body = document.body;
-        body.classList.toggle('high-contrast');
-      }
-      
-      // Alt + D para modo escuro
-      if (event.altKey && event.key === 'd') {
-        event.preventDefault();
-        const body = document.body;
-        body.classList.toggle('dark-mode');
-      }
-      
-      // Ctrl + Plus para aumentar fonte
-      if (event.ctrlKey && (event.key === '+' || event.key === '=')) {
-        event.preventDefault();
-        const root = document.documentElement;
-        const currentSize = parseFloat(getComputedStyle(root).fontSize);
-        root.style.fontSize = `${Math.min(currentSize + 2, 32)}px`;
-      }
-      
-      // Ctrl + Minus para diminuir fonte
-      if (event.ctrlKey && event.key === '-') {
-        event.preventDefault();
-        const root = document.documentElement;
-        const currentSize = parseFloat(getComputedStyle(root).fontSize);
-        root.style.fontSize = `${Math.max(currentSize - 2, 12)}px`;
+        return;
       }
       
       // Escape para fechar painel
       if (event.key === 'Escape' && showPanel) {
         setShowPanel(false);
+        return;
+      }
+      
+      // Atalhos de teclado para as funções principais (se o painel estiver fechado)
+      if (!showPanel) {
+        // Alt + C para alto contraste
+        if (event.altKey && event.key === 'c') {
+          event.preventDefault();
+          const body = document.body;
+          body.classList.toggle('high-contrast');
+          // Atualizar localStorage
+          const isHighContrast = body.classList.contains('high-contrast');
+          const savedSettings = JSON.parse(localStorage.getItem('accessibilitySettings') || '{}');
+          localStorage.setItem('accessibilitySettings', JSON.stringify({...savedSettings, highContrast: isHighContrast}));
+          return;
+        }
+        
+        // Alt + D para modo escuro
+        if (event.altKey && event.key === 'd') {
+          event.preventDefault();
+          const body = document.body;
+          body.classList.toggle('dark-mode');
+          // Atualizar localStorage
+          const isDarkMode = body.classList.contains('dark-mode');
+          const savedSettings = JSON.parse(localStorage.getItem('accessibilitySettings') || '{}');
+          localStorage.setItem('accessibilitySettings', JSON.stringify({...savedSettings, darkMode: isDarkMode}));
+          return;
+        }
       }
     };
 
@@ -83,11 +105,11 @@ const AccessibilityButton = () => {
           <TooltipTrigger asChild>
             <Button
               onClick={() => setShowPanel(true)}
-              className="fixed right-4 top-1/2 -translate-y-1/2 z-30 h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-primary hover:bg-primary/90 flex items-center justify-center"
+              className={ACCESSIBILITY_BUTTON_CLASS}
               size="icon"
-              aria-label="Abrir painel de acessibilidade"
+              aria-label="Abrir painel de acessibilidade. Atalho: Alt + A"
             >
-              <Accessibility className="h-6 w-6" />
+              <Accessibility className="h-7 w-7" /> {/* Aumentado o tamanho do ícone */}
             </Button>
           </TooltipTrigger>
           <TooltipContent side="left" className="mr-2">
@@ -105,4 +127,3 @@ const AccessibilityButton = () => {
 };
 
 export default AccessibilityButton;
-

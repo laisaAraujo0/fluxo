@@ -1,4 +1,4 @@
-import { MapPin, Mail, Github, Twitter, Facebook, Instagram, Heart } from 'lucide-react';
+import { MapPin, Mail, Github, Instagram, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -19,10 +19,8 @@ const Footer = () => {
   ];
 
   const redesSociais = [
-    { icon: Github, href: 'https://github.com/fluxo', label: 'GitHub' },
-    { icon: Twitter, href: 'https://twitter.com/mapadarealidade', label: 'Twitter' },
-    { icon: Facebook, href: 'https://facebook.com/mapadarealidade', label: 'Facebook' },
-    { icon: Instagram, href: 'https://instagram.com/mapadarealidade', label: 'Instagram' },
+    { icon: Github, href: '#', label: 'GitHub' },
+    { icon: Instagram, href: '#', label: 'Instagram' },
   ];
 
   return (
@@ -120,11 +118,6 @@ const Footer = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-            <span>Feito com</span>
-            <Heart className="h-3 w-3 text-red-500 fill-current" />
-            <span>no Brasil</span>
-          </div>
         </div>
       </div>
     </footer>

@@ -50,56 +50,12 @@ const NotFoundPage = () => {
 
         {/* Card Principal */}
         <Card className="shadow-lg">
-          <CardHeader className="text-center">
-            <CardTitle className="flex items-center justify-center gap-2">
-              <Search className="h-5 w-5" />
-              O que você estava procurando?
-            </CardTitle>
-            <CardDescription>
-              Tente buscar por eventos, localizações ou use os links rápidos abaixo
-            </CardDescription>
-          </CardHeader>
+
           
           <CardContent className="space-y-6">
-            {/* Barra de Busca */}
-            <form onSubmit={handleSearch} className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar eventos, localizações, categorias..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={!searchTerm.trim()}>
-                Buscar no Mapa da Realidade
-              </Button>
-            </form>
-
-            {/* Links Rápidos */}
-            <div className="space-y-3">
-              <h3 className="font-semibold text-center">Links Rápidos</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {quickLinks.map((link) => {
-                  const Icon = link.icon;
-                  return (
-                    <Button
-                      key={link.path}
-                      variant="outline"
-                      onClick={() => navigate(link.path)}
-                      className="flex items-center gap-2 h-12"
-                    >
-                      <Icon className="h-4 w-4" />
-                      {link.label}
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
 
             {/* Botões de Navegação */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 variant="outline"
                 onClick={() => navigate(-1)}
@@ -119,33 +75,6 @@ const NotFoundPage = () => {
           </CardContent>
         </Card>
 
-        {/* Informações Adicionais */}
-        <div className="text-center space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div className="space-y-1">
-              <h4 className="font-semibold">Eventos</h4>
-              <p className="text-muted-foreground">
-                Reporte e acompanhe problemas na sua região
-              </p>
-            </div>
-            <div className="space-y-1">
-              <h4 className="font-semibold">Mapas</h4>
-              <p className="text-muted-foreground">
-                Visualize eventos em tempo real no mapa
-              </p>
-            </div>
-            <div className="space-y-1">
-              <h4 className="font-semibold">Comunidade</h4>
-              <p className="text-muted-foreground">
-                Conecte-se com outros cidadãos
-              </p>
-            </div>
-          </div>
-          
-          <p className="text-xs text-muted-foreground">
-            Se você acredita que isso é um erro, entre em contato conosco.
-          </p>
-        </div>
 
         {/* Animação de fundo */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
