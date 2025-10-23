@@ -1,70 +1,79 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { validate, userRegistrationSchema } from "../services/validationService.js";
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || "fluxo-secret-key-2024";
 
 // Registrar novo usuário
-export const registrarUsuario = async (req, res) => {
-  try {
-    const { nome, email, senha, username, avatar, bio, cidade, estado, telefone, status } = req.body;
+export const registrarUsuario = [
+  validate(userRegistrationSchema),
+  async (req, res) => {
+    try {
+      const { nome, email, senha, username, avatar, bio, cidade, estado, telefone, status } = req.body;
 
-    // Verificar se email ou username já existem
-    const usuarioExistente = await prisma.user.findFirst({
-      where: { OR: [{ email }, { username }] },
-    });
+      // Verificar se email ou username já existem
+      const usuarioExistente = await prisma.user.findFirst({
+        where: { OR: [{ email }, { username }] },
+      });
 
-    if (usuarioExistente) {
-      return res.status(400).json({ erro: "Email ou username já cadastrados" });
+      if (usuarioExistente) {
+        return res.status(400).json({ erro: "Email ou username já cadastrados" });
+      }
+
+      // Hash da senha
+      const senhaHash = await bcrypt.hash(senha, 10);
+
+      // Criar usuário
+      const usuario = await prisma.user.create({
+        data: {
+          nome,
+          email,
+          username,
+          avatar,
+          bio,
+          cidade,
+          estado,
+          telefone,
+          status: status || "ACTIVE",
+          senha: senhaHash,
+        },
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          username: true,
+          avatar: true,
+          bio: true,
+          cidade: true,
+          estado: true,
+          telefone: true,
+          status: true,
+          createdAt: true,
+        },
+      });
+
+      // Gerar token JWT
+      const token = jwt.sign({ id: usuario.id, email: usuario.email }, JWT_SECRET, { expiresIn: "7d" });
+
+      res.status(201).json({ mensagem: "Usuário registrado com sucesso", usuario, token });
+    } catch (error) {
+      console.error("Erro ao registrar usuário:", error);
+      res.status(500).json({ erro: "Erro ao registrar usuário" });
     }
-
-    // Hash da senha
-    const senhaHash = await bcrypt.hash(senha, 10);
-
-    // Criar usuário
-    const usuario = await prisma.user.create({
-      data: {
-        nome,
-        email,
-        username,
-        avatar,
-        bio,
-        cidade,
-        estado,
-        telefone,
-        status: status || "ACTIVE",
-        senha: senhaHash,
-      },
-      select: {
-        id: true,
-        nome: true,
-        email: true,
-        username: true,
-        avatar: true,
-        bio: true,
-        cidade: true,
-        estado: true,
-        telefone: true,
-        status: true,
-        createdAt: true,
-      },
-    });
-
-    // Gerar token JWT
-    const token = jwt.sign({ id: usuario.id, email: usuario.email }, JWT_SECRET, { expiresIn: "7d" });
-
-    res.status(201).json({ mensagem: "Usuário registrado com sucesso", usuario, token });
-  } catch (error) {
-    console.error("Erro ao registrar usuário:", error);
-    res.status(500).json({ erro: "Erro ao registrar usuário" });
   }
-};
+];
 
 // Login de usuário
 export const loginUsuario = async (req, res) => {
   try {
     const { email, senha } = req.body;
+
+    // Validação básica de login para evitar falhas imediatas
+    if (!email || !senha) {
+      return res.status(400).json({ erro: "Email e senha são obrigatórios" });
+    }
 
     const usuario = await prisma.user.findUnique({ where: { email } });
 

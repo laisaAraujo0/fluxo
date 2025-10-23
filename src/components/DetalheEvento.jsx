@@ -186,10 +186,10 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
           {/* Conteúdo Principal */}
           <div className="lg:col-span-2 space-y-6">
             {/* Imagem do Evento */}
-            {currentEvento.imagem && (
+            {(currentEvento.imagem || (currentEvento.fotos && currentEvento.fotos.length > 0)) && (
               <div className="relative overflow-hidden rounded-lg">
                 <img
-                  src={currentEvento.imagem}
+                  src={currentEvento.imagem || (currentEvento.fotos.length > 0 ? (typeof currentEvento.fotos[0] === 'string' ? currentEvento.fotos[0] : URL.createObjectURL(currentEvento.fotos[0])) : '')}
                   alt={currentEvento.titulo}
                   className="w-full h-64 md:h-80 object-cover"
                 />

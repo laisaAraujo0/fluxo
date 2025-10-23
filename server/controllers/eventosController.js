@@ -1,9 +1,13 @@
 import { PrismaClient } from '@prisma/client';
+import { validate, eventCreationSchema } from "../services/validationService.js";
+import { invalidateCacheByPrefix } from '../services/cacheService.js';
 const prisma = new PrismaClient();
 
 // Criar evento
-export const criarEvento = async (req, res) => {
-  try {
+export const criarEvento = [
+  validate(eventCreationSchema),
+  async (req, res) => {
+    try {
     const { title, description, location, category, imageUrl } = req.body;
     const authorId = req.usuario?.id;
 
@@ -26,6 +30,9 @@ export const criarEvento = async (req, res) => {
       },
     });
 
+    // Invalida o cache da listagem
+    invalidateCacheByPrefix('/api/eventos');
+
     return res.status(201).json({
       message: 'Evento criado com sucesso',
       evento,
@@ -34,7 +41,7 @@ export const criarEvento = async (req, res) => {
     console.error('Erro ao criar evento:', error);
     return res.status(500).json({ error: 'Erro ao criar evento' });
   }
-};
+];
 
 // Listar eventos (com filtros e paginação)
 export const listarEventos = async (req, res) => {
@@ -122,6 +129,10 @@ export const atualizarEvento = async (req, res) => {
       data: { title, description, location, category, status, imageUrl },
     });
 
+    // Invalida o cache da listagem e do evento específico
+    invalidateCacheByPrefix('/api/eventos');
+    invalidateCacheByPrefix(`/api/eventos/${id}`);
+
     return res.json({
       message: 'Evento atualizado com sucesso',
       evento: eventoAtualizado,
@@ -144,6 +155,10 @@ export const deletarEvento = async (req, res) => {
       return res.status(403).json({ error: 'Sem permissão para deletar este evento' });
 
     await prisma.event.delete({ where: { id } });
+
+    // Invalida o cache da listagem e do evento específico
+    invalidateCacheByPrefix('/api/eventos');
+    invalidateCacheByPrefix(`/api/eventos/${id}`);
 
     return res.json({ message: 'Evento deletado com sucesso' });
   } catch (error) {

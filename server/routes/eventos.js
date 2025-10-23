@@ -10,6 +10,8 @@ import {
   obterEstatisticas,
 } from '../controllers/eventosController.js';
 import { verificarToken, autenticacaoOpcional } from '../middleware/auth.js';
+import { cacheMiddleware } from '../services/cacheService.js';
+import { eventCreationRateLimitMiddleware } from '../services/rateLimitService.js';
 
 const router = express.Router();
 
@@ -17,13 +19,13 @@ const router = express.Router();
 router.get('/estatisticas', obterEstatisticas);
 
 // Listar eventos (autenticação opcional — se o usuário estiver logado, pode personalizar resposta)
-router.get('/', autenticacaoOpcional, listarEventos);
+router.get('/', autenticacaoOpcional, cacheMiddleware(30), listarEventos); // Cache de 30 segundos para listagem
 
 // Obter um evento específico (público)
 router.get('/:id', autenticacaoOpcional, obterEvento);
 
 // Criar novo evento (rota protegida)
-router.post('/', verificarToken, criarEvento);
+router.post('/', verificarToken, eventCreationRateLimitMiddleware, criarEvento); // criarEvento agora é um array [middleware, controller]
 
 // Atualizar um evento existente (rota protegida)
 router.put('/:id', verificarToken, atualizarEvento);

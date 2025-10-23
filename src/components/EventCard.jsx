@@ -106,10 +106,10 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate }) => {
         </div>
 
         {/* Imagem */}
-        {evento.imagem && (
+        {(evento.imagem || (evento.fotos && evento.fotos.length > 0)) && (
           <div className="relative overflow-hidden rounded-lg">
             <img
-              src={evento.imagem}
+              src={evento.imagem || (evento.fotos.length > 0 ? (typeof evento.fotos[0] === 'string' ? evento.fotos[0] : URL.createObjectURL(evento.fotos[0])) : '')}
               alt={evento.titulo}
               className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
             />
