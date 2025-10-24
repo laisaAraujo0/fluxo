@@ -1,13 +1,43 @@
 import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
 import cors from 'cors';
 import usuariosRoutes from './routes/usuarios.js';
-import eventosRoutes from './routes/eventos.js'; 
+import eventosRoutes from './routes/eventos.js';
+import reclamacoesRoutes from './routes/reclamacoes.js'; 
+
 import { PrismaClient } from '@prisma/client';
 import { loggingMiddleware, logger } from './services/loggingService.js';
 import { errorHandler } from './services/errorHandlingService.js';
 import { sanitizationMiddleware } from './services/sanitizationService.js';
 
+
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*", // Permitir todas as origens para desenvolvimento
+    methods: ["GET", "POST"]
+  }
+});
+
+// Middleware para anexar o io ao req (para uso nos controllers/services)
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
+// Lógica de Socket.IO
+io.on('connection', (socket) => {
+  console.log('Novo cliente conectado:', socket.id);
+
+
+
+  socket.on('disconnect', () => {
+    console.log('Cliente desconectado:', socket.id);
+  });
+});
+
 const PORT = process.env.PORT || 3001;
 const prisma = new PrismaClient(); 
 
@@ -31,7 +61,9 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/usuarios', usuariosRoutes);
-app.use('/api/eventos', eventosRoutes); 
+app.use('/api/eventos', eventosRoutes);
+app.use('/api/reclamacoes', reclamacoesRoutes); 
+
 
 app.use((req, res) => {
   res.status(404).json({ erro: 'Rota não encontrada' });
@@ -45,7 +77,7 @@ const iniciarServidor = async () => {
     logger.info('Testando conexão com o banco (Prisma)...');
     await prisma.$connect(); 
 
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       logger.info('Servidor iniciado com sucesso', {
         port: PORT,
         url: `http://localhost:${PORT}`,

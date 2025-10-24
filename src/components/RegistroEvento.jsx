@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, MapPin, Upload, Calendar, Clock, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,9 +9,14 @@ import { formatarCEP, validarCEP } from '@/lib/cep';
 import { toast } from 'sonner';
 import { useUser } from '@/contexts/UserContext';
 import eventService from '@/services/eventService';
+import categoryService from '@/services/categoryService';
+import locationService from '@/services/locationService';
 
 const RegistroEvento = ({ onVoltar, onEventoAdicionado }) => {
   const { user, isAuthenticated } = useUser();
+  const [categories, setCategories] = useState([]);
+  const [coordenadas, setCoordenadas] = useState(null);
+  const [carregandoCoordenadas, setCarregandoCoordenadas] = useState(false);
   const [formData, setFormData] = useState({
     titulo: '',
     descricao: '',
@@ -32,6 +37,34 @@ const RegistroEvento = ({ onVoltar, onEventoAdicionado }) => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Carregar categorias do serviço
+  useEffect(() => {
+    const allCategories = categoryService.getAllCategories();
+    setCategories(allCategories);
+  }, []);
+
+  // Buscar coordenadas quando o CEP muda
+  useEffect(() => {
+    const buscarCoordenadas = async () => {
+      if (formData.cep && validarCEP(formData.cep)) {
+        setCarregandoCoordenadas(true);
+        try {
+          const resultado = await locationService.buscarCEP(formData.cep);
+          if (resultado.success && resultado.data.coordenadas) {
+            setCoordenadas(resultado.data.coordenadas);
+          }
+        } catch (error) {
+          console.error('Erro ao buscar coordenadas:', error);
+        } finally {
+          setCarregandoCoordenadas(false);
+        }
+      }
+    };
+
+    const debounceTimer = setTimeout(buscarCoordenadas, 500);
+    return () => clearTimeout(debounceTimer);
+  }, [formData.cep]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -94,10 +127,13 @@ const RegistroEvento = ({ onVoltar, onEventoAdicionado }) => {
     setIsSubmitting(true);
 
     try {
-      // Criar evento usando o eventService
-      const novoEvento = eventService.createEvent(formData, user);
+      // Criar evento usando o eventService com coordenadas
+      const novoEvento = eventService.createEvent({
+        ...formData,
+        coordenadas: coordenadas
+      }, user);
       
-      console.log('Evento criado:', novoEvento);
+      console.log('Evento criado com coordenadas:', novoEvento);
       toast.success('Evento criado com sucesso!');
       
       // Callback para atualizar a lista de eventos
@@ -256,20 +292,11 @@ const RegistroEvento = ({ onVoltar, onEventoAdicionado }) => {
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="infraestrutura">Infraestrutura</SelectItem>
-                  <SelectItem value="cultura">Cultura</SelectItem>
-                  <SelectItem value="esporte">Esporte</SelectItem>
-                  <SelectItem value="educacao">Educação</SelectItem>
-                  <SelectItem value="saude">Saúde</SelectItem>
-                  <SelectItem value="meio-ambiente">Meio Ambiente</SelectItem>
-                  <SelectItem value="tecnologia">Tecnologia</SelectItem>
-                  <SelectItem value="gastronomia">Gastronomia</SelectItem>
-                  <SelectItem value="musica">Música</SelectItem>
-                  <SelectItem value="arte">Arte</SelectItem>
-                  <SelectItem value="seguranca">Segurança</SelectItem>
-                  <SelectItem value="mobilidade-urbana">Mobilidade Urbana</SelectItem>
-                  <SelectItem value="evento-comunitario">Evento Comunitário</SelectItem>
-                  <SelectItem value="outros">Outros</SelectItem>
+                  {categories.map(cat => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.icone} {cat.nome}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

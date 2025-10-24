@@ -10,6 +10,7 @@ import EventFilters from '@/components/EventFilters';
 import EventCard from '@/components/EventCard';
 import { useUser } from '@/contexts/UserContext';
 import eventService from '@/services/eventService';
+import { subscribeToBroadcast, unsubscribeFromBroadcast } from '@/services/socketService';
 import { toast } from 'sonner';
 
 const EventosPage = () => {
@@ -28,6 +29,18 @@ const EventosPage = () => {
   // Carregar eventos na inicialização
   useEffect(() => {
     loadEvents();
+
+    // Configuração do listener de broadcast
+    subscribeToBroadcast('event:new', handleNewEventBroadcast);
+    subscribeToBroadcast('event:updated', handleUpdatedEventBroadcast);
+    subscribeToBroadcast('event:deleted', handleDeletedEventBroadcast);
+
+    // Limpeza ao desmontar
+    return () => {
+      unsubscribeFromBroadcast('event:new', handleNewEventBroadcast);
+      unsubscribeFromBroadcast('event:updated', handleUpdatedEventBroadcast);
+      unsubscribeFromBroadcast('event:deleted', handleDeletedEventBroadcast);
+    };
   }, []);
 
   const loadEvents = () => {
@@ -54,8 +67,37 @@ const EventosPage = () => {
 
   // Callback para quando um novo evento é adicionado
   const handleEventoAdicionado = (novoEvento) => {
+    // Apenas adiciona se não for um broadcast (evita duplicação se o broadcast for rápido)
+    // No entanto, como o broadcast é feito pelo servidor após o save,
+    // o criador do evento receberá o broadcast. Vamos confiar no broadcast.
+    // O ideal é que o `criarEvento` do backend retorne o evento completo e o frontend o adicione.
+    // Vamos manter a lógica original, mas o broadcast fará o trabalho.
+    // Esta função é chamada quando o formulário é submetido.
     setEventos(prevEventos => [novoEvento, ...prevEventos]);
     toast.success('Evento adicionado com sucesso!');
+  };
+
+  // Handler para o broadcast de novo evento
+  const handleNewEventBroadcast = (novoEvento) => {
+    // Adiciona o novo evento no topo da lista
+    setEventos(prevEventos => [novoEvento, ...prevEventos]);
+    toast.info(`Novo Evento Criado: ${novoEvento.title}`);
+  };
+
+  // Handler para o broadcast de evento atualizado
+  const handleUpdatedEventBroadcast = (updatedEvent) => {
+    setEventos(prevEventos => 
+      prevEventos.map(evento => 
+        evento.id === updatedEvent.id ? updatedEvent : evento
+      )
+    );
+    toast.info(`Evento Atualizado: ${updatedEvent.title}`);
+  };
+
+  // Handler para o broadcast de evento deletado
+  const handleDeletedEventBroadcast = ({ id }) => {
+    setEventos(prevEventos => prevEventos.filter(evento => evento.id !== id));
+    toast.warning(`Evento Removido.`);
   };
 
   // Filtrar e ordenar eventos

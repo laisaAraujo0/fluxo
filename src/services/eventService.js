@@ -104,6 +104,8 @@ class EventService {
       autorId: user.id,
       autorNome: user.nome || user.name || 'Usuário Anônimo',
       autorAvatar: user.avatar || null,
+      coordenadas: eventData.coordenadas || null,
+      cep: eventData.cep || null,
       curtidas: [],
       comentarios: [],
       createdAt: new Date().toISOString(),
@@ -215,6 +217,22 @@ class EventService {
     if (!event || event.autorId !== userId) return null;
 
     Object.assign(event, updates, { updatedAt: new Date().toISOString() });
+    this.saveEvents();
+    return event;
+  }
+
+  // Obter eventos com coordenadas
+  getEventsWithCoordinates() {
+    return this.events.filter(event => event.coordenadas);
+  }
+
+  // Atualizar coordenadas de um evento
+  updateEventCoordinates(eventId, coordenadas, userId) {
+    const event = this.getEventById(eventId);
+    if (!event || event.autorId !== userId) return null;
+
+    event.coordenadas = coordenadas;
+    event.updatedAt = new Date().toISOString();
     this.saveEvents();
     return event;
   }

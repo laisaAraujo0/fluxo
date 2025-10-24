@@ -33,6 +33,13 @@ export const criarEvento = [
     // Invalida o cache da listagem
     invalidateCacheByPrefix('/api/eventos');
 
+    // ** BROADCAST: Notificar todos os clientes sobre o novo evento **
+    // req.io é injetado pelo middleware no server.js
+    if (req.io) {
+      // Emitir para todos os clientes conectados
+      req.io.emit('event:new', evento); 
+    }
+
     return res.status(201).json({
       message: 'Evento criado com sucesso',
       evento,
@@ -133,6 +140,11 @@ export const atualizarEvento = async (req, res) => {
     invalidateCacheByPrefix('/api/eventos');
     invalidateCacheByPrefix(`/api/eventos/${id}`);
 
+    // ** BROADCAST: Notificar todos os clientes sobre a atualização do evento **
+    if (req.io) {
+      req.io.emit('event:updated', eventoAtualizado);
+    }
+
     return res.json({
       message: 'Evento atualizado com sucesso',
       evento: eventoAtualizado,
@@ -159,6 +171,11 @@ export const deletarEvento = async (req, res) => {
     // Invalida o cache da listagem e do evento específico
     invalidateCacheByPrefix('/api/eventos');
     invalidateCacheByPrefix(`/api/eventos/${id}`);
+
+    // ** BROADCAST: Notificar todos os clientes sobre a deleção do evento **
+    if (req.io) {
+      req.io.emit('event:deleted', { id }); // Envia o ID do evento deletado
+    }
 
     return res.json({ message: 'Evento deletado com sucesso' });
   } catch (error) {
