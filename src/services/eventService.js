@@ -30,7 +30,7 @@ class EventService {
         avaliacoes: 2.1,
         status: 'pendente',
         prioridade: 'alta',
-        imagem: "https://lh3.googleusercontent.com/aida-public/AB6AXuBKZr1g30scy6QiorRb98rU1SW13tijIq_AJ2KM-4NwLkpVzO9O8N0z0cVlCjqrZOpLxklr-C2ZFR4-xYnQLSnUwEup8E5u5GE9-orKpo3nco7kk7KXZLPPrw3CWvS9PPs-uZrOIXyXWtj-PUDcjyHZBP9EI_xrMJ2jzrSmVs6E7eJsyqIQv92XAZ_leXopv5reRvrYdjQHiY8B-naMSe0CHfcM-ndREILx0_BRdgsJAh5kU3Z0yCtr7ssszmHm7QqOhZNkiSr4Gm0",
+        imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuBKZr1g30scy6QiorRb98rU1SW13tijIq_AJ2KM-4NwLkpVzO9O8N0z0cVlCjqrZOpLxklr-C2ZFR4-xYnQLSnUwEup8E5u5GE9-orKpo3nco7kk7KXZLPPrw3CWvS9PPs-uZrOIXyXWtj-PUDcjyHZBP9EI_xrMJ2jzrSmVs6E7eJsyqIQv92XAZ_leXopv5reRvrYdjQHiY8B-naMSe0CHfcM-ndREILx0_BRdgsJAh5kU3Z0yCtr7ssszmHm7QqOhZNkiSr4Gm0",
         tags: ['infraestrutura', 'trânsito', 'urgente'],
         autorId: 'user-1',
         autorNome: 'João Silva',
@@ -56,7 +56,7 @@ class EventService {
         avaliacoes: 4.8,
         status: 'ativo',
         prioridade: 'baixa',
-        imagem: "https://lh3.googleusercontent.com/aida-public/AB6AXuA4phROEA8Q6SjAe5C7zXyd6mKedMgHoOiu-buU27-v5Ug61KmNgTIfMnEd1cBXzJH1L02QGiZ8aLQQgMfLwZigMT7gE-uOhAIuEHnlYmGuYvv57IFUHQNnd3N_Fd4ZjQIlPHabigm6CfsrzXCkjgBuC6Bs0TSuyHS9aZD38MVYkjJglJg4RhFJZVdQ9N0ywiDBrg3biFslBFbWQRd8N81x1f5bxKS8GsUPS0GaUrrJidlPmrQEtjST-6gLxPB2TLCQenkCcqvBit4",
+        imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuA4phROEA8Q6SjAe5C7zXyd6mKedMgHoOiu-buU27-v5Ug61KmNgTIfMnEd1cBXzJH1L02QGiZ8aLQQgMfLwZigMT7gE-uOhAIuEHnlYmGuYvv57IFUHQNnd3N_Fd4ZjQIlPHabigm6CfsrzXCkjgBuC6Bs0TSuyHS9aZD38MVYkjJglJg4RhFJZVdQ9N0ywiDBrg3biFslBFbWQRd8N81x1f5bxKS8GsUPS0GaUrrJidlPmrQEtjST-6gLxPB2TLCQenkCcqvBit4",
         tags: ['artesanato', 'cultura', 'família'],
         autorId: 'user-2',
         autorNome: 'Prefeitura Municipal',
@@ -98,8 +98,7 @@ class EventService {
       avaliacoes: 0,
       status: 'pendente',
       prioridade: eventData.prioridade || 'media',
-      fotos: eventData.fotos || [],
-      imagem: eventData.imagem || (eventData.fotos && eventData.fotos.length > 0 ? eventData.fotos[0] : "https://lh3.googleusercontent.com/aida-public/AB6AXuBKZr1g30scy6QiorRb98rU1SW13tijIq_AJ2KM-4NwLkpVzO9O8N0z0cVlCjqrZOpLxklr-C2ZFR4-xYnQLSnUwEup8E5u5GE9-orKpo3nco7kk7KXZLPPrw3CWvS9PPs-uZrOIXyXWtj-PUDcjyHZBP9EI_xrMJ2jzrSmVs6E7eJsyqIQv92XAZ_leXopv5reRvrYdjQHiY8B-naMSe0CHfcM-ndREILx0_BRdgsJAh5kU3Z0yCtr7ssszhHm7QqOhZNkiSr4Gm0"),
+      imageUrl: eventData.imageUrl || null,
       tags: this.generateTags(eventData.categoria, eventData.titulo),
       autorId: user.id,
       autorNome: user.nome || user.name || 'Usuário Anônimo',
@@ -212,13 +211,30 @@ class EventService {
   }
 
   // Atualizar evento
-  updateEvent(eventId, updates, userId) {
+  async updateEvent(eventId, updates, userId) {
     const event = this.getEventById(eventId);
-    if (!event || event.autorId !== userId) return null;
+    if (!event) throw new Error('Evento não encontrado');
+    if (event.autorId !== userId) throw new Error('Sem permissão para editar este evento');
 
-    Object.assign(event, updates, { updatedAt: new Date().toISOString() });
+    // Mapear os campos do formData para a estrutura do evento
+    const updatedEvent = {
+        ...event,
+        titulo: updates.titulo || event.titulo,
+        descricao: updates.descricao || event.descricao,
+        categoria: updates.categoria || event.categoria,
+        endereco: updates.endereco || event.endereco,
+        dataInicio: updates.dataInicio || event.dataInicio,
+        dataFim: updates.dataFim || event.dataFim,
+        horario: updates.horario || event.horario,
+        preco: updates.preco || event.preco,
+        prioridade: updates.prioridade || event.prioridade,
+        imageUrl: updates.imageUrl || event.imageUrl,
+        updatedAt: new Date().toISOString()
+    };
+
+    this.events = this.events.map(e => e.id === eventId ? updatedEvent : e);
     this.saveEvents();
-    return event;
+    return updatedEvent;
   }
 
   // Obter eventos com coordenadas
@@ -238,18 +254,19 @@ class EventService {
   }
 
   // Deletar evento
-  deleteEvent(eventId, userId) {
+  async deleteEvent(eventId, userId) {
     const eventIndex = this.events.findIndex(
-      event => event.id === parseInt(eventId) && event.autorId === userId
+      event => event.id === parseInt(eventId)
     );
 
-    if (eventIndex > -1) {
-      const deletedEvent = this.events.splice(eventIndex, 1)[0];
-      this.saveEvents();
-      return deletedEvent;
-    }
+    if (eventIndex === -1) throw new Error('Evento não encontrado');
 
-    return null;
+    const event = this.events[eventIndex];
+    if (event.autorId !== userId) throw new Error('Sem permissão para deletar este evento');
+
+    const deletedEvent = this.events.splice(eventIndex, 1)[0];
+    this.saveEvents();
+    return deletedEvent;
   }
 
   // Filtrar eventos

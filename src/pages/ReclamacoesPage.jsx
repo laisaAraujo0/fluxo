@@ -73,8 +73,8 @@ const ReclamacoesPage = () => {
   ]);
 
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedState, setSelectedState] = useState("all");
-  const [selectedCity, setSelectedCity] = useState("all");
+  // const [selectedState, setSelectedState] = useState("all"); // Removido conforme solicitação
+  // const [selectedCity, setSelectedCity] = useState("all"); // Removido conforme solicitação
 
   // Handler para o broadcast de nova reclamação
   useEffect(() => {
@@ -90,19 +90,25 @@ const ReclamacoesPage = () => {
     toast.info(`Nova Reclamação Registrada: ${novaReclamacao.title}`);
   };
 
-  const categorias = ["all", "Infraestrutura", "Serviços Públicos", "Meio Ambiente", "Saneamento", "Segurança"];
-  const estados = ["all", "SP", "RJ", "MG"];
-  const cidadesPorEstado = {
-    all: ["all"],
-    SP: ["all", "São Paulo", "Campinas"],
-    RJ: ["all", "Rio de Janeiro", "Niterói"],
-    MG: ["all", "Belo Horizonte", "Uberlândia"],
-  };
+  const categorias = ["all", "Prefeitura Municipal", "Corpo de Bombeiros", "SAMU/Ambulância", "Polícia Militar", "Polícia Civil", "Defesa Civil", "Companhia de Água e Esgoto", "Companhia de Energia Elétrica", "Secretaria de Obras", "Secretaria de Meio Ambiente", "Secretaria de Transporte", "Guarda Municipal"];
+  // const estados = ["all", "SP", "RJ", "MG"]; // Removido conforme solicitação
+  // const cidadesPorEstado = { // Removido conforme solicitação
+  //   all: ["all"],
+  //   SP: ["all", "São Paulo", "Campinas"],
+  //   RJ: ["all", "Rio de Janeiro", "Niterói"],
+  //   MG: ["all", "Belo Horizonte", "Uberlândia"],
+  // }; // Removido conforme solicitação
+
+  // Simulação: A localização do usuário logado seria obtida aqui.
+  // Para fins de demonstração, vamos simular que o usuário está em "São Paulo", "SP".
+  const userState = "SP";
+  const userCity = "São Paulo";
 
   const filteredReclamacoes = reclamacoes.filter((r) => {
     const matchesCategory = selectedCategory === "all" || r.categoria === selectedCategory;
-    const matchesState = selectedState === "all" || r.estado === selectedState;
-    const matchesCity = selectedCity === "all" || r.cidade === selectedCity;
+    // A filtragem agora usa a localização simulada do usuário
+    const matchesState = r.estado === userState;
+    const matchesCity = r.cidade === userCity;
     return matchesCategory && matchesState && matchesCity;
   });
 
@@ -149,37 +155,14 @@ const ReclamacoesPage = () => {
               </SelectContent>
             </Select>
 
-            {/* Estado */}
-            <Select value={selectedState} onValueChange={setSelectedState}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Estado" />
-              </SelectTrigger>
-              <SelectContent>
-                {estados.map(estado => (
-                  <SelectItem key={estado} value={estado}>
-                    {estado === "all" ? "Todos os Estados" : estado}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Cidade */}
-            <Select
-              value={selectedCity}
-              onValueChange={setSelectedCity}
-              disabled={selectedState === "all"}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Cidade" />
-              </SelectTrigger>
-              <SelectContent>
-                {cidadesPorEstado[selectedState]?.map(cidade => (
-                  <SelectItem key={cidade} value={cidade}>
-                    {cidade === "all" ? "Todas as Cidades" : cidade}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* 
+            * O botão/filtro de localização foi removido conforme solicitado.
+            * A filtragem por localização deve ser feita automaticamente
+            * com base na localização cadastrada do usuário logado,
+            * o que requer integração com o serviço de autenticação/perfil.
+            * A lógica de filtro abaixo foi mantida para simulação, mas
+            * deve ser ajustada para usar a localização do usuário.
+            */}
           </div>
 
           <p className="mt-1 text-muted-foreground">

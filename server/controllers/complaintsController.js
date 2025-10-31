@@ -53,15 +53,52 @@ export const criarReclamacao = [
   }
 ];
 
-// Listar Reclamações (Mock para simplificar, mas necessário para o broadcast)
+// Listar Reclamações com filtros de localização
 export const listarReclamacoes = async (req, res) => {
+  const { localidade, uf } = req.query;
+  
+  const where = {};
+
+  if (localidade && uf) {
+    // Assumindo que a localização é armazenada em um campo JSON ou string
+    // e que podemos filtrar por cidade e estado.
+    // Se a estrutura do banco de dados for diferente, isso precisará ser ajustado.
+    // Por enquanto, vamos simular um filtro simples.
+    // Se o campo 'location' for um JSON, o filtro seria mais complexo.
+    // Vamos assumir que a reclamação tem campos 'cidade' e 'estado' para simplificar.
+    // Como não tenho o schema.prisma, vou assumir que o campo 'location' é uma string
+    // que contém a cidade e o estado. Isso é um risco, mas é o melhor que posso fazer
+    // sem o schema.prisma.
+    // Se o campo 'location' for um JSON, o filtro seria:
+    // where: {
+    //   location: {
+    //     path: ['cidade'],
+    //     equals: localidade
+    //   },
+    //   location: {
+    //     path: ['uf'],
+    //     equals: uf
+    //   }
+    // }
+    // Como não sei a estrutura, vou usar um filtro genérico que precisará ser ajustado
+    // se o banco de dados for real.
+    // Para o mock, vou ignorar o filtro por enquanto, mas vou deixar a estrutura pronta.
+    // No entanto, para atender ao requisito, vou adicionar um filtro que
+    // *simula* a busca por localização, assumindo que a localização é armazenada
+    // em um campo 'location' que contém a cidade e o estado.
+    where.location = {
+      contains: `${localidade}, ${uf}`,
+      mode: 'insensitive'
+    };
+  }
   try {
     const reclamacoes = await prisma.complaint.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
       include: {
         author: { select: { id: true, name: true, email: true } },
       },
-      take: 20, // Limite para evitar sobrecarga
+      take: 50, // Aumentar limite para melhor visualização
     });
 
     return res.json({ reclamacoes });

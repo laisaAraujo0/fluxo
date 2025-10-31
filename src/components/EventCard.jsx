@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { Heart, MessageCircle, MapPin, Calendar, Clock, DollarSign, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -9,13 +10,14 @@ import { useUser } from '@/contexts/UserContext';
 import eventService from '@/services/eventService';
 import { toast } from 'sonner';
 
-const EventCard = ({ evento, onEventoClick, onEventoUpdate }) => {
+const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) => {
   const { user, isAuthenticated } = useUser();
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   const isLiked = evento.curtidas?.some(like => like.userId === user?.id);
+  const isAuthor = user && evento.autorId === user.id;
   const likesCount = evento.curtidas?.length || 0;
   const commentsCount = evento.comentarios?.length || 0;
 
@@ -97,8 +99,18 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate }) => {
               <p className="text-xs text-muted-foreground">{formatDateTime(evento.createdAt)}</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <Badge className={getStatusColor(evento.status)}>{evento.status}</Badge>
+            {isAuthor && (
+              <div className="flex space-x-1">
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-500 hover:text-blue-700" onClick={(e) => { e.stopPropagation(); onEdit(evento); }}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500 hover:text-red-700" onClick={(e) => { e.stopPropagation(); onDelete(evento.id); }}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
             {evento.prioridade && (
               <Badge className={getPriorityColor(evento.prioridade)}>{evento.prioridade}</Badge>
             )}
@@ -106,10 +118,10 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate }) => {
         </div>
 
         {/* Imagem */}
-        {(evento.imagem || (evento.fotos && evento.fotos.length > 0)) && (
+        {evento.imageUrl && (
           <div className="relative overflow-hidden rounded-lg">
             <img
-              src={evento.imagem || (evento.fotos.length > 0 ? (typeof evento.fotos[0] === 'string' ? evento.fotos[0] : URL.createObjectURL(evento.fotos[0])) : '')}
+              src={evento.imageUrl}
               alt={evento.titulo}
               className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
             />

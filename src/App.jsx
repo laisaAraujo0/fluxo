@@ -88,10 +88,38 @@ function AppContent() {
 
           {/* Rotas com layout */}
           <Route path="/" element={<Layout />}>
-            <Route index element={<EventosPage />} />
-            <Route path="eventos" element={<EventosPage />} />
-            <Route path="reclamacoes" element={<ReclamacoesPage />} />
-            <Route path="mapas" element={<MapasPage />} />
+            <Route
+              index
+              element={
+                <ProtectedUserRoute>
+                  <EventosPage />
+                </ProtectedUserRoute>
+              }
+            />
+            <Route
+              path="eventos"
+              element={
+                <ProtectedUserRoute>
+                  <EventosPage />
+                </ProtectedUserRoute>
+              }
+            />
+            <Route
+              path="reclamacoes"
+              element={
+                <ProtectedUserRoute>
+                  <ReclamacoesPage />
+                </ProtectedUserRoute>
+              }
+            />
+            <Route
+              path="mapas"
+              element={
+                <ProtectedUserRoute>
+                  <MapasPage />
+                </ProtectedUserRoute>
+              }
+            />
 
             {/* Rota protegida de usuário */}
             <Route

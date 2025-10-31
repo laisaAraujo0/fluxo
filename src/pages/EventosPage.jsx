@@ -24,6 +24,7 @@ const EventosPage = () => {
   const [favoriteEvents, setFavoriteEvents] = useState(new Set());
   const [activeFilters, setActiveFilters] = useState({});
   const [eventos, setEventos] = useState([]);
+  const [eventoParaEditar, setEventoParaEditar] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Carregar eventos na inicialização
@@ -67,12 +68,20 @@ const EventosPage = () => {
 
   // Callback para quando um novo evento é adicionado
   const handleEventoAdicionado = (novoEvento) => {
+    // Se estiver em modo de edição, apenas atualiza a lista
+    if (eventoParaEditar) {
+      handleEventoUpdate(novoEvento);
+      setEventoParaEditar(null);
+      toast.success('Evento atualizado com sucesso!');
+      handleVoltarLista();
+      return;
+    }
     // Apenas adiciona se não for um broadcast (evita duplicação se o broadcast for rápido)
     // No entanto, como o broadcast é feito pelo servidor após o save,
     // o criador do evento receberá o broadcast. Vamos confiar no broadcast.
     // O ideal é que o `criarEvento` do backend retorne o evento completo e o frontend o adicione.
     // Vamos manter a lógica original, mas o broadcast fará o trabalho.
-    // Esta função é chamada quando o formulário é submetido.
+        // Esta função é chamada quando o formulário é submetido.
     setEventos(prevEventos => [novoEvento, ...prevEventos]);
     toast.success('Evento adicionado com sucesso!');
   };
@@ -160,6 +169,23 @@ const EventosPage = () => {
     setCurrentView('detalhes');
   };
 
+  const handleEdit = (evento) => {
+    setEventoParaEditar(evento);
+    setCurrentView('registro');
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm('Tem certeza que deseja excluir este evento?')) {
+      try {
+        eventService.deleteEvent(id, user.id);
+        setEventos(prevEventos => prevEventos.filter(evento => evento.id !== id));
+        toast.success('Evento excluído com sucesso!');
+      } catch (error) {
+        toast.error(error.message || 'Erro ao excluir evento.');
+      }
+    }
+  };
+
   const handleNovoEvento = () => {
     if (!isAuthenticated()) {
       toast.error('Você precisa estar logado para criar um evento');
@@ -171,6 +197,7 @@ const EventosPage = () => {
   const handleVoltarLista = () => {
     setCurrentView('lista');
     setEventoSelecionado(null);
+    setEventoParaEditar(null);
   };
 
   const handleToggleFavorite = (eventoId) => {
@@ -204,6 +231,7 @@ const EventosPage = () => {
       <RegistroEvento 
         onVoltar={handleVoltarLista}
         onEventoAdicionado={handleEventoAdicionado}
+        eventoParaEditar={eventoParaEditar}
       />
     );
   }
@@ -326,6 +354,8 @@ const EventosPage = () => {
                   evento={evento}
                   onEventoClick={handleEventoClick}
                   onEventoUpdate={handleEventoUpdate}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
                 />
               ))}
             </div>
