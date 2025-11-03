@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Pencil, Trash2 } from 'lucide-react';
 import { Heart, MessageCircle, MapPin, Calendar, Clock, DollarSign, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import eventService from '@/services/eventService';
 import { toast } from 'sonner';
 
 const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) => {
+  const navigate = useNavigate();
   const { user, isAuthenticated } = useUser();
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
@@ -182,7 +184,7 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
       </CardContent>
 
       <CardFooter className="flex flex-col justify-end mt-auto space-y-3">
-        <div className="flex items-center justify-between w-full">
+	        <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
@@ -207,15 +209,28 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
             </Button>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEventoClick && onEventoClick(evento)}
-            className="flex items-center space-x-1"
-          >
-            <Eye className="h-4 w-4" />
-            <span>Ver Detalhes</span>
-          </Button>
+	          <div className="flex items-center space-x-2">
+	            <Button
+	              variant="outline"
+	              size="icon"
+	              onClick={(e) => {
+	                e.stopPropagation();
+	                navigate(`/mapas?lat=${evento.latitude || -23.5505}&lng=${evento.longitude || -46.6333}`);
+	              }}
+	              className="h-8 w-8 flex-shrink-0"
+	            >
+	              <MapPin className="h-4 w-4" />
+	            </Button>
+	            <Button
+	              variant="outline"
+	              size="sm"
+	              onClick={() => onEventoClick && onEventoClick(evento)}
+	              className="flex items-center space-x-1"
+	            >
+	              <Eye className="h-4 w-4" />
+	              <span>Ver Detalhes</span>
+	            </Button>
+	          </div>
         </div>
 
         {/* Comentários */}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, MapPin, Calendar, Clock, User, Heart, MessageCircle, Share2, DollarSign, Tag } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +12,7 @@ import eventService from '@/services/eventService';
 import { toast } from 'sonner';
 
 const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
+  const navigate = useNavigate();
   const { user, isAuthenticated } = useUser();
   const [currentEvento, setCurrentEvento] = useState(evento);
   const [newComment, setNewComment] = useState('');
@@ -252,9 +254,19 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
               </div>
             )}
 
-            {/* Botões de Ação */}
-            <div className="flex items-center justify-between border-t border-b py-4">
-              <div className="flex items-center space-x-6">
+	            {/* Botões de Ação */}
+	            <div className="flex items-center justify-between border-t border-b py-4">
+	              <div className="flex items-center space-x-6">
+	                {/* Botão Ver no Mapa */}
+	                <Button
+	                  variant="outline"
+	                  size="sm"
+	                  onClick={() => navigate(`/mapas?lat=${currentEvento.latitude || -23.5505}&lng=${currentEvento.longitude || -46.6333}`)}
+	                  className="flex items-center space-x-2"
+	                >
+	                  <MapPin className="h-4 w-4" />
+	                  <span>Ver no mapa</span>
+	                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
