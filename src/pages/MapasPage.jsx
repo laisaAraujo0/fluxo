@@ -85,9 +85,22 @@ const MapasPage = () => {
     aplicarFiltros();
   }, [filtros, eventos]);
 
-  // Processar dados recebidos via navegação (CEP do Navbar)
+  // Processar dados recebidos via navegação (CEP do Navbar ou evento)
   useEffect(() => {
-    if (location.state) {
+    const query = new URLSearchParams(location.search);
+    const latParam = query.get('lat');
+    const lngParam = query.get('lng');
+
+    if (latParam && lngParam) {
+      const lat = parseFloat(latParam);
+      const lng = parseFloat(lngParam);
+
+      if (!isNaN(lat) && !isNaN(lng)) {
+        setCoorenadasCentralizar({ lat, lng });
+        toast.info('Mapa centralizado na localização do evento.');
+        // Não limpar a query string para que o mapa permaneça centralizado se o usuário voltar
+      }
+    } else if (location.state) {
       const { cep, endereco, coordenadas, centralizarMapa, localizacaoAtual: isCurrentLocation } = location.state;
       
       if (centralizarMapa && coordenadas) {
@@ -134,7 +147,7 @@ const MapasPage = () => {
         window.history.replaceState({}, document.title);
       }
     }
-  }, [location.state, filtros.raio]);
+  }, [location.state, location.search, filtros.raio]);
 
   const aplicarFiltros = () => {
     let eventosFiltrados = [...eventos];
@@ -603,16 +616,17 @@ const MapasPage = () => {
               {/* Tab do Mapa */}
               <TabsContent value="mapa" className="space-y-4">
                 <MapaAvancado
-                  eventos={eventosFiltrados}
-                  coordenadasCentralizar={coordenadasCentralizar}
-                  localizacaoAtual={localizacaoAtual}
-                  dadosCEP={dadosCEP}
-                  onEventoSelecionado={handleEventoSelecionado}
-                  altura="600px"
-                  zoom={13}
-                  mostrarRaio={mostrarRaio}
-                  raioKm={filtros.raio[0]}
-                />
+	                  eventos={eventosFiltrados}
+	                  coordenadasCentralizar={coordenadasCentralizar}
+	                  localizacaoAtual={localizacaoAtual}
+	                  dadosCEP={dadosCEP}
+	                  onEventoSelecionado={handleEventoSelecionado}
+	                  altura="600px"
+	                  zoom={13}
+	                  mostrarRaio={mostrarRaio}
+	                  raioKm={filtros.raio[0]}
+	                  marcadorUnico={coordenadasCentralizar} // Adiciona um marcador único se houver coordenadas de centralização (do evento)
+	                />
 
                 {/* Detalhes do evento selecionado */}
                 {eventoSelecionado && (

@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { validate, eventCreationSchema } from "../services/validationService.js";
 import { invalidateCacheByPrefix } from '../services/cacheService.js';
+import { createNotification } from '../services/notificationService.js';
 const prisma = new PrismaClient();
 
 // Criar evento
@@ -48,7 +49,7 @@ export const criarEvento = [
     console.error('Erro ao criar evento:', error);
     return res.status(500).json({ error: 'Erro ao criar evento' });
   }
-];
+],
 
 // Listar eventos (com filtros e paginação)
 export const listarEventos = async (req, res) => {
@@ -136,6 +137,19 @@ export const atualizarEvento = async (req, res) => {
       data: { title, description, location, category, status, imageUrl },
     });
 
+    // Notificação de aprovação/rejeição
+    if (status && status !== evento.status && (status === 'APPROVED' || status === 'REJECTED')) {
+      const message = status === 'APPROVED'
+        ? `Seu evento "${evento.title}" foi aprovado pelo administrador.`
+        : `Seu evento "${evento.title}" foi rejeitado pelo administrador.`;
+      
+      await createNotification(
+        evento.authorId,
+        'APPROVAL',
+        message
+      );
+    }
+
     // Invalida o cache da listagem e do evento específico
     invalidateCacheByPrefix('/api/eventos');
     invalidateCacheByPrefix(`/api/eventos/${id}`);
@@ -193,6 +207,13 @@ export const adicionarComentario = async (req, res) => {
 
     if (!content) return res.status(400).json({ error: 'Comentário não pode ser vazio' });
 
+    const evento = await prisma.event.findUnique({
+      where: { id },
+      select: { authorId: true, title: true }
+    });
+
+    if (!evento) return res.status(404).json({ error: 'Evento não encontrado' });
+
     const comentario = await prisma.comment.create({
       data: {
         content,
@@ -203,6 +224,15 @@ export const adicionarComentario = async (req, res) => {
         author: { select: { id: true, name: true, avatar: true } },
       },
     });
+
+    // Notificação para o autor do evento
+    if (evento.authorId !== authorId) {
+      await createNotification(
+        evento.authorId,
+        'COMMENT',
+        `Seu evento "${evento.title}" recebeu um novo comentário de ${req.usuario.name}.`
+      );
+    }
 
     return res.status(201).json({
       message: 'Comentário adicionado com sucesso',
@@ -228,6 +258,13 @@ export const votarEvento = async (req, res) => {
       },
     });
 
+    const evento = await prisma.event.findUnique({
+      where: { id },
+      select: { authorId: true, title: true }
+    });
+
+    if (!evento) return res.status(404).json({ error: 'Evento não encontrado' });
+
     if (likeExistente) {
       await prisma.like.delete({
         where: { userId_eventId: { userId, eventId: id } },
@@ -241,6 +278,15 @@ export const votarEvento = async (req, res) => {
         eventId: id,
       },
     });
+
+    // Notificação para o autor do evento
+    if (evento.authorId !== userId) {
+      await createNotification(
+        evento.authorId,
+        'LIKE',
+        `Seu evento "${evento.title}" recebeu uma curtida de ${req.usuario.name}.`
+      );
+    }
 
     return res.json({ message: 'Evento curtido com sucesso' });
   } catch (error) {

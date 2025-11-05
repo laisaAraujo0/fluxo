@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { MapPin, Menu, User, LayoutDashboard, X, LogOut } from 'lucide-react';
+import { MapPin, Menu, User, LayoutDashboard, X, LogOut, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import GlobalSearch from './GlobalSearch';
 import CEPInput from './CEPInput';
 import { useUser } from '@/contexts/UserContext';
+import NotificationBell from './NotificationBell';
 
 import {
   DropdownMenu,
@@ -47,7 +48,7 @@ const Navbar = () => {
   return (
     <>
       {/* Navbar Principal */}
-      <nav className="sticky top-0 z-[2000] w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <nav className="sticky top-0 z-2000 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
@@ -67,6 +68,9 @@ const Navbar = () => {
 
             {/* Right side buttons */}
             <div className="flex items-center space-x-2">
+              {/* Notification Bell */}
+              {isAuthenticated() && <NotificationBell />}
+
               {/* Login/User menu */}
               {isAuthenticated() ? (
                 <>

@@ -13,6 +13,10 @@ export const registrarUsuario = [
     try {
       const { nome, email, senha, username, avatar, bio, cidade, estado, telefone, status } = req.body;
 
+      if (!senha || senha.length < 8) {
+        return res.status(400).json({ erro: "Senha deve ter pelo menos 8 caracteres" });
+      }
+
       // Verificar se email ou username já existem
       const usuarioExistente = await prisma.user.findFirst({
         where: { OR: [{ email }, { username }] },
@@ -28,7 +32,7 @@ export const registrarUsuario = [
       // Criar usuário
       const usuario = await prisma.user.create({
         data: {
-          nome,
+          name: nome, // Corrigindo para 'name' conforme schema.prisma
           email,
           username,
           avatar,
@@ -37,7 +41,7 @@ export const registrarUsuario = [
           estado,
           telefone,
           status: status || "ACTIVE",
-          senha: senhaHash,
+          password: senhaHash, // Corrigindo para 'password' conforme schema.prisma
         },
         select: {
           id: true,
@@ -84,7 +88,7 @@ export const loginUsuario = async (req, res) => {
 
     const token = jwt.sign({ id: usuario.id, email: usuario.email }, JWT_SECRET, { expiresIn: "7d" });
 
-    const { senha: _, ...usuarioSemSenha } = usuario;
+    const { password: _, ...usuarioSemSenha } = usuario;
 
     res.json({ mensagem: "Login realizado com sucesso", usuario: usuarioSemSenha, token });
   } catch (error) {
