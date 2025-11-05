@@ -4,7 +4,7 @@ import { z } from "zod";
 export const userRegistrationSchema = z.object({
   nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
   email: z.string().email("Formato de email inválido"),
-  senha: z.string().min(8, "Senha deve ter pelo menos 8 caracteres"),
+  // A validação de senha será feita no controller, após o hash
   username: z.string().min(3, "Username deve ter pelo menos 3 caracteres"),
   cidade: z.string().optional(),
   estado: z.string().optional(),

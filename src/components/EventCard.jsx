@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Trash2 } from 'lucide-react';
-import { Heart, MessageCircle, MapPin, Calendar, Clock, DollarSign, Eye } from 'lucide-react';
+import { Pencil, Trash2, Heart, MessageCircle, MapPin, Calendar, Clock, DollarSign, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -88,8 +87,8 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
 
   return (
     <Card className="flex flex-col h-full group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-border">
-      <CardHeader className="space-y-4 flex-shrink-0">
-        {/* Autor e Data */}
+      <CardHeader className="space-y-4 shrink-0">
+        {/* Autor e status */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Avatar className="h-8 w-8">
@@ -103,16 +102,6 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
           </div>
           <div className="flex gap-2 items-center">
             <Badge className={getStatusColor(evento.status)}>{evento.status}</Badge>
-            {isAuthor && (
-              <div className="flex space-x-1">
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-500 hover:text-blue-700" onClick={(e) => { e.stopPropagation(); onEdit(evento); }}>
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500 hover:text-red-700" onClick={(e) => { e.stopPropagation(); onDelete(evento.id); }}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
             {evento.prioridade && (
               <Badge className={getPriorityColor(evento.prioridade)}>{evento.prioridade}</Badge>
             )}
@@ -130,13 +119,12 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
           </div>
         )}
 
-         {/* Título */}
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+        {/* Título */}
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
             {evento.titulo}
-            </h3>
-          </div>
-
+          </h3>
+        </div>
 
         {/* Tags */}
         {evento.tags?.length > 0 && (
@@ -151,7 +139,7 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
         )}
       </CardHeader>
 
-      <CardContent className="flex-grow space-y-3">
+      <CardContent className="grow space-y-3">
         <div className="grid grid-cols-1 gap-2 text-sm">
           {evento.endereco && (
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -184,7 +172,8 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
       </CardContent>
 
       <CardFooter className="flex flex-col justify-end mt-auto space-y-3">
-	        <div className="flex items-center justify-between w-full">
+        {/* Like e Comentário */}
+        <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
@@ -208,29 +197,53 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
               <span>{commentsCount}</span>
             </Button>
           </div>
+        </div>
 
-	          <div className="flex items-center space-x-2">
-	            <Button
-	              variant="outline"
-	              size="icon"
-	              onClick={(e) => {
-	                e.stopPropagation();
-	                navigate(`/mapas?lat=${evento.latitude || -23.5505}&lng=${evento.longitude || -46.6333}`);
-	              }}
-	              className="h-8 w-8 flex-shrink-0"
-	            >
-	              <MapPin className="h-4 w-4" />
-	            </Button>
-	            <Button
-	              variant="outline"
-	              size="sm"
-	              onClick={() => onEventoClick && onEventoClick(evento)}
-	              className="flex items-center space-x-1"
-	            >
-	              <Eye className="h-4 w-4" />
-	              <span>Ver Detalhes</span>
-	            </Button>
-	          </div>
+        {/* Botões Editar / Excluir / Ver Detalhes */}
+        <div className="flex items-center justify-between w-full">
+          {isAuthor && (
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-blue-500 hover:text-blue-700"
+                onClick={(e) => { e.stopPropagation(); onEdit(evento); }}
+              >
+                <Pencil className="h-4 w-4" /> 
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-red-500 hover:text-red-700"
+                onClick={(e) => { e.stopPropagation(); onDelete(evento.id); }}
+              >
+                <Trash2 className="h-4 w-4 " /> 
+              </Button>
+            </div>
+          )}
+
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/mapas?lat=${evento.latitude || -23.5505}&lng=${evento.longitude || -46.6333}`);
+              }}
+              className="h-8 w-8 shrink-0"
+            >
+              <MapPin className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEventoClick && onEventoClick(evento)}
+              className="flex items-center space-x-1"
+            >
+              <Eye className="h-4 w-4" />
+              <span>Ver Detalhes</span>
+            </Button>
+          </div>
         </div>
 
         {/* Comentários */}

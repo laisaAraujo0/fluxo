@@ -5,6 +5,7 @@ import cors from 'cors';
 import usuariosRoutes from './routes/usuarios.js';
 import eventosRoutes from './routes/eventos.js';
 import reclamacoesRoutes from './routes/reclamacoes.js'; 
+import notificationsRoutes from './routes/notifications.js';
 
 import { PrismaClient } from '@prisma/client';
 import { loggingMiddleware, logger } from './services/loggingService.js';
@@ -63,6 +64,7 @@ app.get('/', (req, res) => {
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/eventos', eventosRoutes);
 app.use('/api/reclamacoes', reclamacoesRoutes); 
+app.use('/api/notifications', notificationsRoutes);
 
 
 app.use((req, res) => {
