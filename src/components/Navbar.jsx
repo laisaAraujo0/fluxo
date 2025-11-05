@@ -6,6 +6,7 @@ import GlobalSearch from './GlobalSearch';
 import CEPInput from './CEPInput';
 import { useUser } from '@/contexts/UserContext';
 import NotificationBell from './NotificationBell';
+import ThemeSwitcher from './ThemeSwitcher'; // Importando o ThemeSwitcher
 
 import {
   DropdownMenu,
@@ -68,6 +69,10 @@ const Navbar = () => {
 
             {/* Right side buttons */}
             <div className="flex items-center space-x-2">
+
+              {/* Theme Switcher */}
+              <ThemeSwitcher />
+
               {/* Notification Bell */}
               {isAuthenticated() && <NotificationBell />}
 
@@ -163,7 +168,7 @@ const Navbar = () => {
                     to={item.path}
                     className={`flex items-center space-x-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive(item.path)
-                        ? 'bg-primary text-primary-foreground'
+                        ? 'bg-gray-200'
                         : 'text-muted-foreground hover:text-foreground hover:bg-background'
                     }`}
                   >
@@ -183,42 +188,44 @@ const Navbar = () => {
       </div>
 
       {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
+      <div className={`fixed inset-0 z-50 md:hidden transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
           {/* Backdrop */}
           <div 
             className="fixed inset-0 bg-black/50 backdrop-blur-sm"
             onClick={closeMobileMenu}
           />
           
+          
           {/* Menu Panel */}
-          <div className="fixed inset-0 bg-background">
-            <div className="flex flex-col h-full">
+          <div className={`fixed inset-y-0 left-0 w-full max-w-sm bg-background shadow-2xl transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className="flex flex-col h-full overflow-y-auto">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b">
-                <Link to="/" className="flex items-center space-x-2" onClick={closeMobileMenu}>
+              <div className="flex items-center justify-between p-7">
+                {/* <Link to="/" className="flex items-center space-x-2" onClick={closeMobileMenu}>
                   <MapPin className="h-8 w-8 text-primary" />
                   <span className="text-xl font-bold text-foreground">
                     FLUXO
                   </span>
-                </Link>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={closeMobileMenu}
-                >
-                  <X className="h-5 w-5" />
-                </Button>
+                </Link> */}
+                {/* <div className=" flex items-center space-x-3 px-4 py-10 rounded-lg text-base font-medium transition-colors">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={closeMobileMenu}
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div> */}
               </div>
 
               {/* Search and Location */}
-              <div className="p-4 space-y-4 border-b">
+              <div className="p-8 space-y-4 border-b">
                 <GlobalSearch />
                 <CEPInput />
               </div>
 
               {/* Navigation Items */}
-              <div className="flex-1 p-4">
+              <div className="flex-1 p-8">
                 <div className="space-y-2">
                   {navItems.map((item) => {
                     const Icon = item.icon;
@@ -229,7 +236,7 @@ const Navbar = () => {
                         onClick={closeMobileMenu}
                         className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium transition-colors ${
                           isActive(item.path)
-                            ? 'bg-primary text-primary-foreground'
+                            ? 'bg-gray-200'
                             : 'text-foreground hover:bg-muted'
                         }`}
                       >
@@ -331,8 +338,7 @@ const Navbar = () => {
               </div>
             </div>
           </div>
-        </div>
-      )}
+      </div>
     </>
   );
 };
