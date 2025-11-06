@@ -463,14 +463,6 @@ const ConfiguracoesPerfil = ({ userData, setUserData, onVoltar, initialSection =
                   />
                 </div>
                 <div>
-                  <Label htmlFor="bio">Bio</Label>
-                  <Input
-                    id="bio"
-                    value={editableUserData.bio}
-                    onChange={(e) => handleEditableDataChange("bio", e.target.value)}
-                  />
-                </div>
-                <div>
                   <Label htmlFor="cidade">Cidade</Label>
                   <Input
                     id="cidade"

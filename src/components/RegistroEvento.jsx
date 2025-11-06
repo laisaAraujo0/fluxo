@@ -249,7 +249,7 @@ const RegistroEvento = ({ onVoltar, onEventoAdicionado, eventoParaEditar }) => {
               <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
-                  <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Clique para enviar</span> ou arraste e solte</p>
+                  <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Clique para enviar</span></p>
                   <p className="text-xs text-muted-foreground">PNG, JPG ou GIF (MAX. 10MB)</p>
                 </div>
                 <input id="file-upload" name="fotos" type="file" className="hidden" onChange={handleFileUpload} accept="image/png, image/jpeg, image/gif" />
@@ -259,13 +259,13 @@ const RegistroEvento = ({ onVoltar, onEventoAdicionado, eventoParaEditar }) => {
               <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {existingImage && (
                   <div className="relative group">
-                    <img src={existingImage} alt="Imagem existente" className="w-full h-24 object-cover rounded-lg" />
+                    <img src={existingImage} alt="Imagem existente" className="w-full h-24 object-contain rounded-lg bg-muted" />
                     <button type="button" onClick={() => setExistingImage(null)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"><X className="h-3 w-3" /></button>
                   </div>
                 )}
                 {formData.fotos.map((file, index) => (
                   <div key={index} className="relative group">
-                    <img src={URL.createObjectURL(file)} alt={`Preview ${index}`} className="w-full h-24 object-cover rounded-lg" />
+                    <img src={URL.createObjectURL(file)} alt={`Preview ${index}`} className="w-full h-24 object-contain rounded-lg bg-muted" />
                     <button type="button" onClick={() => removePhoto(index)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"><X className="h-3 w-3" /></button>
                   </div>
                 ))}

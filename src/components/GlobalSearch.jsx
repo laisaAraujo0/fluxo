@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, Calendar, AlertCircle, Loader2, X } from 'lucide-react';
+import { Search, Calendar, AlertCircle, Loader2, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { validarCEP } from '@/lib/cep';
 import { buscarEventosPorTermo } from '@/services/api';
 
 const GlobalSearch = ({ onClose }) => {
@@ -13,17 +12,15 @@ const GlobalSearch = ({ onClose }) => {
   const [results, setResults] = useState({
     eventos: [],
     reclamacoes: [],
-    ceps: []
   });
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const navigate = useNavigate();
   const searchRef = useRef(null);
 
-  // Buscar em múltiplas fontes usando a API
   useEffect(() => {
     if (query.length < 2) {
-      setResults({ eventos: [], reclamacoes: [], ceps: [] });
+      setResults({ eventos: [], reclamacoes: [] });
       setShowResults(false);
       return;
     }
@@ -31,7 +28,6 @@ const GlobalSearch = ({ onClose }) => {
     setLoading(true);
     setShowResults(true);
 
-    // Debounce da busca
     const timer = setTimeout(() => {
       performSearch(query);
     }, 300);
@@ -41,34 +37,24 @@ const GlobalSearch = ({ onClose }) => {
 
   const performSearch = async (searchQuery) => {
     try {
-      // Verificar se é um CEP
-      const isCEP = validarCEP(searchQuery.replace(/\D/g, ''));
-      
-      // Buscar eventos usando a API
       const eventosResponse = await buscarEventosPorTermo(searchQuery);
-      
+
       const mockResults = {
         eventos: eventosResponse.success ? eventosResponse.data : [],
-        reclamacoes: isCEP ? [] : [
+        reclamacoes: [
           {
             id: 1,
             titulo: `Reclamação sobre "${searchQuery}"`,
             status: 'Em análise',
-            data: '2024-10-08'
-          }
+            data: '2024-10-08',
+          },
         ],
-        ceps: isCEP ? [
-          {
-            cep: searchQuery.replace(/\D/g, ''),
-            endereco: 'Endereço encontrado'
-          }
-        ] : []
       };
 
       setResults(mockResults);
     } catch (error) {
       console.error('Erro na busca:', error);
-      setResults({ eventos: [], reclamacoes: [], ceps: [] });
+      setResults({ eventos: [], reclamacoes: [] });
     } finally {
       setLoading(false);
     }
@@ -82,38 +68,35 @@ const GlobalSearch = ({ onClose }) => {
       case 'reclamacao':
         navigate(`/reclamacoes?id=${item.id}`);
         break;
-      case 'cep':
-        navigate(`/mapas`, { state: { cep: item.cep } });
-        break;
     }
     if (onClose) onClose();
   };
 
   const getCategoryColor = (categoria) => {
     const colors = {
-      'cultura': 'bg-purple-500',
-      'esporte': 'bg-blue-500',
-      'educacao': 'bg-green-500',
-      'saude': 'bg-red-500',
+      cultura: 'bg-purple-500',
+      esporte: 'bg-blue-500',
+      educacao: 'bg-green-500',
+      saude: 'bg-red-500',
       'meio ambiente': 'bg-emerald-500',
-      'tecnologia': 'bg-cyan-500',
-      'musica': 'bg-pink-500',
-      'gastronomia': 'bg-orange-500',
-      'arte': 'bg-indigo-500',
-      'infraestrutura': 'bg-gray-500',
-      'outros': 'bg-gray-500'
+      tecnologia: 'bg-cyan-500',
+      musica: 'bg-pink-500',
+      gastronomia: 'bg-orange-500',
+      arte: 'bg-indigo-500',
+      infraestrutura: 'bg-gray-500',
+      outros: 'bg-gray-500',
     };
     return colors[categoria?.toLowerCase()] || 'bg-gray-500';
   };
 
-  const totalResults = results.eventos.length + results.reclamacoes.length + results.ceps.length;
+  const totalResults = results.eventos.length + results.reclamacoes.length;
 
   return (
     <div className="relative w-full" ref={searchRef}>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar eventos, reclamações, CEP..."
+          placeholder="Buscar eventos ou reclamações..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="pl-10 pr-10"
@@ -148,26 +131,6 @@ const GlobalSearch = ({ onClose }) => {
               </div>
             )}
 
-            {/* Resultados de CEP */}
-            {results.ceps.length > 0 && (
-              <div className="mb-4">
-                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  CEPs
-                </h3>
-                {results.ceps.map((cep, index) => (
-                  <div
-                    key={index}
-                    onClick={() => handleResultClick('cep', cep)}
-                    className="p-3 hover:bg-muted rounded-lg cursor-pointer transition-colors"
-                  >
-                    <p className="font-medium">{cep.cep}</p>
-                    <p className="text-sm text-muted-foreground">{cep.endereco}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
             {/* Resultados de Eventos */}
             {results.eventos.length > 0 && (
               <div className="mb-4">
@@ -189,7 +152,7 @@ const GlobalSearch = ({ onClose }) => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <p className="font-medium line-clamp-1">{evento.titulo}</p>
-                          <Badge 
+                          <Badge
                             className={`${getCategoryColor(evento.categoria)} text-white text-xs flex-shrink-0`}
                           >
                             {evento.categoria}
@@ -240,4 +203,3 @@ const GlobalSearch = ({ onClose }) => {
 };
 
 export default GlobalSearch;
-

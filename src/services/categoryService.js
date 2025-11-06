@@ -35,14 +35,14 @@ class CategoryService {
         icone: '⚽'
       },
       {
-        id: 'educacao',
+        id: 'educação',
         nome: 'Educação',
         descricao: 'Eventos educacionais e workshops',
         cor: '#3b82f6',
         icone: '📚'
       },
       {
-        id: 'saude',
+        id: 'saúde',
         nome: 'Saúde',
         descricao: 'Eventos relacionados à saúde e bem-estar',
         cor: '#06b6d4',
@@ -70,7 +70,7 @@ class CategoryService {
         icone: '🍽️'
       },
       {
-        id: 'musica',
+        id: 'música',
         nome: 'Música',
         descricao: 'Eventos musicais e shows',
         cor: '#d946ef',
@@ -84,7 +84,7 @@ class CategoryService {
         icone: '🎨'
       },
       {
-        id: 'seguranca',
+        id: 'segurança',
         nome: 'Segurança',
         descricao: 'Questões de segurança pública',
         cor: '#dc2626',
@@ -98,7 +98,7 @@ class CategoryService {
         icone: '🚌'
       },
       {
-        id: 'evento-comunitario',
+        id: 'evento-comunitário',
         nome: 'Evento Comunitário',
         descricao: 'Eventos comunitários diversos',
         cor: '#6366f1',
