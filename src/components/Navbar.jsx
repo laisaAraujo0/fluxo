@@ -168,7 +168,7 @@ const Navbar = () => {
                     to={item.path}
                     className={`flex items-center space-x-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive(item.path)
-                        ? 'bg-gray-200'
+                        ? 'bg-gray-200 dark:bg-gray-900'
                         : 'text-muted-foreground hover:text-foreground hover:bg-background'
                     }`}
                   >
@@ -192,7 +192,7 @@ const Navbar = () => {
           {/* Backdrop */}
           <div 
             className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={closeMobileMenu}
+            
           />
           
           
@@ -201,7 +201,7 @@ const Navbar = () => {
             <div className="flex flex-col h-full overflow-y-auto">
               {/* Header */}
               <div className="flex items-center justify-between p-7">
-                {/* <Link to="/" className="flex items-center space-x-2" onClick={closeMobileMenu}>
+                {/* <Link to="/" className="flex items-center space-x-2" >
                   <MapPin className="h-8 w-8 text-primary" />
                   <span className="text-xl font-bold text-foreground">
                     FLUXO
@@ -211,7 +211,7 @@ const Navbar = () => {
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    onClick={closeMobileMenu}
+                    
                   >
                     <X className="h-5 w-5" />
                   </Button>
@@ -233,10 +233,10 @@ const Navbar = () => {
                       <Link
                         key={item.path}
                         to={item.path}
-                        onClick={closeMobileMenu}
+                        
                         className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium transition-colors ${
                           isActive(item.path)
-                            ? 'bg-gray-200'
+                            ? 'bg-gray-200 dark:bg-gray-900'
                             : 'text-foreground hover:bg-muted'
                         }`}
                       >
@@ -268,7 +268,7 @@ const Navbar = () => {
                           className="w-full justify-start"
                           onClick={() => {
                             navigate('/admin');
-                            closeMobileMenu();
+                            
                           }}
                         >
                           <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -279,7 +279,7 @@ const Navbar = () => {
                           className="w-full justify-start"
                           onClick={() => {
                             navigate('/dashboard');
-                            closeMobileMenu();
+                            
                           }}
                         >
                           <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -292,7 +292,7 @@ const Navbar = () => {
                         className="w-full justify-start"
                         onClick={() => {
                           navigate('/perfil');
-                          closeMobileMenu();
+                          
                         }}
                       >
                         <User className="mr-2 h-4 w-4" />
@@ -305,7 +305,7 @@ const Navbar = () => {
                       className="w-full justify-start"
                       onClick={() => {
                         handleLogout();
-                        closeMobileMenu();
+                        
                       }}
                     >
                       <LogOut className="mr-2 h-4 w-4" />
@@ -318,7 +318,7 @@ const Navbar = () => {
                       className="w-full"
                       onClick={() => {
                         navigate('/login');
-                        closeMobileMenu();
+                        
                       }}
                     >
                       Entrar
@@ -328,7 +328,7 @@ const Navbar = () => {
                       className="w-full"
                       onClick={() => {
                         navigate('/cadastro');
-                        closeMobileMenu();
+                        
                       }}
                     >
                       Cadastrar

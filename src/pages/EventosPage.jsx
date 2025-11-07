@@ -1,12 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Plus, ChevronLeft, ChevronRight, Heart } from 'lucide-react';
+import { Search, Plus, ChevronLeft, ChevronRight, Filter, Calendar, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DetalheEvento from '@/components/DetalheEvento';
 import RegistroEvento from '@/components/RegistroEvento';
-import EventFilters from '@/components/EventFilters';
 import EventCard from '@/components/EventCard';
 import { useUser } from '@/contexts/UserContext';
 import eventService from '@/services/eventService';
@@ -14,29 +12,35 @@ import { subscribeToBroadcast, unsubscribeFromBroadcast } from '@/services/socke
 import { toast } from 'sonner';
 
 const EventosPage = () => {
-  const { user, isAuthenticated } = useUser();
+  const { isAuthenticated } = useUser();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentView, setCurrentView] = useState('lista');
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(3);
   const [sortBy, setSortBy] = useState('data');
-  const [favoriteEvents, setFavoriteEvents] = useState(new Set());
   const [activeFilters, setActiveFilters] = useState({});
   const [eventos, setEventos] = useState([]);
   const [eventoParaEditar, setEventoParaEditar] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Carregar eventos na inicialização
+  // Filtros temporários
+  const [isFiltersVisible, setIsFiltersVisible] = useState(false);
+  const [tempFilters, setTempFilters] = useState({
+    categoria: '',
+    cidade: '',
+    status: '',
+    dataInicio: '',
+    dataFim: '',
+  });
+
+  // ======== CARREGAMENTO E SOCKET ========
   useEffect(() => {
     loadEvents();
-
-    // Configuração do listener de broadcast
     subscribeToBroadcast('event:new', handleNewEventBroadcast);
     subscribeToBroadcast('event:updated', handleUpdatedEventBroadcast);
     subscribeToBroadcast('event:deleted', handleDeletedEventBroadcast);
 
-    // Limpeza ao desmontar
     return () => {
       unsubscribeFromBroadcast('event:new', handleNewEventBroadcast);
       unsubscribeFromBroadcast('event:updated', handleUpdatedEventBroadcast);
@@ -57,89 +61,64 @@ const EventosPage = () => {
     }
   };
 
-  // Callback para quando um evento é atualizado (curtida, comentário)
-  const handleEventoUpdate = (updatedEvent) => {
-    setEventos(prevEventos => 
-      prevEventos.map(evento => 
-        evento.id === updatedEvent.id ? updatedEvent : evento
-      )
-    );
-  };
-
-  // Callback para quando um novo evento é adicionado
-  const handleEventoAdicionado = (novoEvento) => {
-    // Se estiver em modo de edição, apenas atualiza a lista
-    if (eventoParaEditar) {
-      handleEventoUpdate(novoEvento);
-      setEventoParaEditar(null);
-      toast.success('Evento atualizado com sucesso!');
-      handleVoltarLista();
-      return;
-    }
-    // Apenas adiciona se não for um broadcast (evita duplicação se o broadcast for rápido)
-    // No entanto, como o broadcast é feito pelo servidor após o save,
-    // o criador do evento receberá o broadcast. Vamos confiar no broadcast.
-    // O ideal é que o `criarEvento` do backend retorne o evento completo e o frontend o adicione.
-    // Vamos manter a lógica original, mas o broadcast fará o trabalho.
-        // Esta função é chamada quando o formulário é submetido.
-    setEventos(prevEventos => [novoEvento, ...prevEventos]);
-    toast.success('Evento adicionado com sucesso!');
-  };
-
-  // Handler para o broadcast de novo evento
   const handleNewEventBroadcast = (novoEvento) => {
-    // Adiciona o novo evento no topo da lista
-    setEventos(prevEventos => [novoEvento, ...prevEventos]);
+    setEventos((prev) => [novoEvento, ...prev]);
     toast.info(`Novo Evento Criado: ${novoEvento.title}`);
   };
 
-  // Handler para o broadcast de evento atualizado
   const handleUpdatedEventBroadcast = (updatedEvent) => {
-    setEventos(prevEventos => 
-      prevEventos.map(evento => 
-        evento.id === updatedEvent.id ? updatedEvent : evento
-      )
-    );
+    setEventos((prev) => prev.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)));
     toast.info(`Evento Atualizado: ${updatedEvent.title}`);
   };
 
-  // Handler para o broadcast de evento deletado
   const handleDeletedEventBroadcast = ({ id }) => {
-    setEventos(prevEventos => prevEventos.filter(evento => evento.id !== id));
-    toast.warning(`Evento Removido.`);
+    setEventos((prev) => prev.filter((e) => e.id !== id));
+    toast.warning('Evento Removido.');
   };
 
-  // Filtrar e ordenar eventos
+  // ======== FILTRAGEM E ORDENAÇÃO ========
   const filteredAndSortedEvents = useMemo(() => {
-    let filtered = eventos.filter(evento => {
-      const matchesSearch = evento.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           evento.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           evento.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-      
-      const matchesCategory = !activeFilters.categoria || activeFilters.categoria === 'todos' || 
-                             evento.categoria === activeFilters.categoria;
-      
-      const matchesLocation = !activeFilters.cidade || 
-                             evento.endereco.toLowerCase().includes(activeFilters.cidade.toLowerCase());
-      
-      const matchesStatus = !activeFilters.status || activeFilters.status === 'todos' || 
-                           evento.status === activeFilters.status.replace(' ', '_');
-      
-      const matchesDateStart = !activeFilters.dataInicio || 
-                              new Date(evento.dataInicio) >= new Date(activeFilters.dataInicio);
-      
-      const matchesDateEnd = !activeFilters.dataFim || 
-                            new Date(evento.dataInicio) <= new Date(activeFilters.dataFim);
+    let filtered = eventos.filter((evento) => {
+      const matchesSearch =
+        evento.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        evento.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        evento.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      return matchesSearch && matchesCategory && matchesLocation && matchesStatus && 
-             matchesDateStart && matchesDateEnd;
+      const matchesCategory =
+        !activeFilters.categoria ||
+        activeFilters.categoria === 'todos' ||
+        evento.categoria === activeFilters.categoria;
+
+      const matchesLocation =
+        !activeFilters.cidade ||
+        evento.endereco.toLowerCase().includes(activeFilters.cidade.toLowerCase());
+
+      const matchesStatus =
+        !activeFilters.status ||
+        activeFilters.status === 'todos' ||
+        evento.status === activeFilters.status.replace(' ', '_');
+
+      const matchesDateStart =
+        !activeFilters.dataInicio ||
+        new Date(evento.dataInicio) >= new Date(activeFilters.dataInicio);
+
+      const matchesDateEnd =
+        !activeFilters.dataFim || new Date(evento.dataInicio) <= new Date(activeFilters.dataFim);
+
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesLocation &&
+        matchesStatus &&
+        matchesDateStart &&
+        matchesDateEnd
+      );
     });
 
-    // Ordenar eventos
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'data':
-          return new Date(b.createdAt) - new Date(a.createdAt); // Mais recentes primeiro
+          return new Date(b.createdAt) - new Date(a.createdAt);
         case 'titulo':
           return a.titulo.localeCompare(b.titulo);
         case 'popularidade':
@@ -154,38 +133,24 @@ const EventosPage = () => {
     return filtered;
   }, [eventos, searchTerm, activeFilters, sortBy]);
 
-  // Paginação
   const totalPages = Math.ceil(filteredAndSortedEvents.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedEvents = filteredAndSortedEvents.slice(startIndex, startIndex + itemsPerPage);
 
-  // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, activeFilters, sortBy]);
 
-  const handleEventoClick = (evento) => {
-    setEventoSelecionado(evento);
-    setCurrentView('detalhes');
+  const handleApplyFilters = () => {
+    setActiveFilters(tempFilters);
+    setIsFiltersVisible(false);
   };
 
-  const handleEdit = (evento) => {
-    setEventoParaEditar(evento);
-    setCurrentView('registro');
+  const handleInputChange = (field, value) => {
+    setTempFilters((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Tem certeza que deseja excluir este evento?')) {
-      try {
-        eventService.deleteEvent(id, user.id);
-        setEventos(prevEventos => prevEventos.filter(evento => evento.id !== id));
-        toast.success('Evento excluído com sucesso!');
-      } catch (error) {
-        toast.error(error.message || 'Erro ao excluir evento.');
-      }
-    }
-  };
-
+  // ======== NAVEGAÇÃO ========
   const handleNovoEvento = () => {
     if (!isAuthenticated()) {
       toast.error('Você precisa estar logado para criar um evento');
@@ -200,35 +165,39 @@ const EventosPage = () => {
     setEventoParaEditar(null);
   };
 
-  const handleToggleFavorite = (eventoId) => {
-    setFavoriteEvents(prev => {
-      const newFavorites = new Set(prev);
-      if (newFavorites.has(eventoId)) {
-        newFavorites.delete(eventoId);
-      } else {
-        newFavorites.add(eventoId);
-      }
-      return newFavorites;
-    });
+  const handleVerDetalhes = (evento) => {
+    setEventoSelecionado(evento);
+    setCurrentView('detalhes');
   };
 
-  const handleFiltersChange = (filters) => {
-    setActiveFilters(filters);
+  const handleEventoAdicionado = (novoEvento) => {
+    if (eventoParaEditar) {
+      setEventos((prev) => prev.map((e) => (e.id === novoEvento.id ? novoEvento : e)));
+      setEventoParaEditar(null);
+      toast.success('Evento atualizado com sucesso!');
+      handleVoltarLista();
+      return;
+    }
+    setEventos((prev) => [novoEvento, ...prev]);
+    toast.success('Evento adicionado com sucesso!');
   };
 
+  // ======== RENDERIZAÇÃO DAS TELAS ========
   if (currentView === 'detalhes' && eventoSelecionado) {
     return (
-      <DetalheEvento 
-        evento={eventoSelecionado} 
+      <DetalheEvento
+        evento={eventoSelecionado}
         onVoltar={handleVoltarLista}
-        onEventoUpdate={handleEventoUpdate}
+        onEventoUpdate={(e) =>
+          setEventos((prev) => prev.map((ev) => (ev.id === e.id ? e : ev)))
+        }
       />
     );
   }
 
   if (currentView === 'registro') {
     return (
-      <RegistroEvento 
+      <RegistroEvento
         onVoltar={handleVoltarLista}
         onEventoAdicionado={handleEventoAdicionado}
         eventoParaEditar={eventoParaEditar}
@@ -236,34 +205,27 @@ const EventosPage = () => {
     );
   }
 
+  // ======== PÁGINA PRINCIPAL ========
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Cabeçalho */}
-      <div className="mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Eventos da Comunidade
-            </h1>
-            <p className="mt-2 text-muted-foreground">
-              Descubra e participe de eventos em sua região, ou crie novos eventos para sua comunidade.
-            </p>
-          </div>
-          <Button 
-            onClick={handleNovoEvento}
-            className="flex items-center gap-2"
-            size="lg"
-          >
-            <Plus className="h-5 w-5" />
-            Novo Evento
-          </Button>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Eventos da Comunidade</h1>
+          <p className="mt-2 text-muted-foreground">
+            Descubra e participe de eventos em sua região, ou crie novos eventos para sua comunidade.
+          </p>
         </div>
+        <Button onClick={handleNovoEvento} className="flex items-center gap-2" size="lg">
+          <Plus className="h-5 w-5" /> Novo Evento
+        </Button>
+      </div>
 
-        {/* Estatísticas */}
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
-          <div className="bg-card p-5 rounded-2xl border shadow-md text-center w-full max-w-sm transition-transform hover:scale-105">
-        <div className="text-3xl font-bold text-primary">{eventos.length}</div>
-        <div className="text-lg text-muted-foreground mt-2">Total de Eventos</div>
+      {/* Estatísticas */}
+      <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="bg-card p-4 rounded-lg border">
+          <div className="text-2xl font-bold text-primary">{eventos.length}</div>
+          <div className="text-sm text-muted-foreground">Total de Eventos</div>
         </div>
         <div className="bg-card p-5 rounded-2xl border shadow-md text-center w-full max-w-sm transition-transform hover:scale-105">
           <div className="text-3xl font-bold text-green-600">
@@ -277,45 +239,144 @@ const EventosPage = () => {
           </div>
           <div className="text-lg text-muted-foreground mt-2">Pendentes</div>
         </div>
-          {/*<div className="bg-card p-4 rounded-lg border">
-            <div className="text-2xl font-bold text-red-600">
-              {eventos.reduce((sum, e) => sum + (e.curtidas?.length || 0), 0)}
-            </div>
-            <div className="text-sm text-muted-foreground">Total de Curtidas</div>
-          </div> */}   
-        </div>
-      </div>
-
-      {/* Barra de Pesquisa e Filtros */}
-      <div className="mb-6 space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Pesquisar eventos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+        {/* <div className="bg-card p-4 rounded-lg border">
+          <div className="text-2xl font-bold text-red-600">
+            {eventos.reduce((sum, e) => sum + (e.curtidas?.length || 0), 0)}
           </div>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Ordenar por" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="data">Mais Recentes</SelectItem>
-              <SelectItem value="titulo">Título A-Z</SelectItem>
-              <SelectItem value="popularidade">Mais Curtidos</SelectItem>
-              <SelectItem value="comentarios">Mais Comentados</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Filtros Avançados */}
-        <EventFilters onFiltersApply={handleFiltersChange} />
+          <div className="text-sm text-muted-foreground">Total de Curtidas</div>
+        </div> */}
       </div>
 
-      {/* Lista de Eventos */}
+      {/* Barra de Pesquisa + Ordenação + Filtros */}
+      <div className="flex flex-wrap items-center gap-3 mb-4 mt-6">
+        <div className="flex-1 min-w-240px relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Pesquisar eventos..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Mais recentes" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="data">Mais Recentes</SelectItem>
+            <SelectItem value="titulo">Título A-Z</SelectItem>
+            <SelectItem value="popularidade">Mais Curtidos</SelectItem>
+            <SelectItem value="comentarios">Mais Comentados</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Button
+          onClick={() => setIsFiltersVisible(!isFiltersVisible)}
+          className="flex items-center gap-2 bg-white text-black dark:bg-gray-900 hover:bg-gray-300 rounded-lg shadow-sm border"
+        >
+          <Filter className="h-4 w-4" /> Filtros
+        </Button>
+      </div>
+
+      {/* Painel de Filtros */}
+      {isFiltersVisible && (
+        <div className="bg-card border rounded-xl p-4 md:p-6 shadow-sm mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-4">
+            {/* Categoria */}
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">Categoria</label>
+              <Select
+                value={tempFilters.categoria}
+                onValueChange={(v) => handleInputChange('categoria', v)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Todas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todas</SelectItem>
+                  <SelectItem value="Cultura">Cultura</SelectItem>
+                  <SelectItem value="Educação">Educação</SelectItem>
+                  <SelectItem value="Esportes">Esportes</SelectItem>
+                  <SelectItem value="Saúde">Saúde</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Cidade */}
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">Cidade</label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Digite uma cidade"
+                  value={tempFilters.cidade}
+                  onChange={(e) => handleInputChange('cidade', e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            {/* Status */}
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">Status</label>
+              <Select
+                value={tempFilters.status}
+                onValueChange={(v) => handleInputChange('status', v)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="ativo">Ativo</SelectItem>
+                  <SelectItem value="pendente">Pendente</SelectItem>
+                  <SelectItem value="concluido">Concluído</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Data Início */}
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">Data Início</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="date"
+                  value={tempFilters.dataInicio}
+                  onChange={(e) => handleInputChange('dataInicio', e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            {/* Data Fim */}
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">Data Fim</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="date"
+                  value={tempFilters.dataFim}
+                  onChange={(e) => handleInputChange('dataFim', e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-start">
+            <Button
+              onClick={handleApplyFilters}
+              className="flex items-center justify-center gap-2 w-full sm:w-auto bg-gray-200 text-black dark:bg-gray-900 hover:bg-gray-300"
+            >
+              <Filter className="h-4 w-4" /> Aplicar Filtros
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* 🔹 Lista de eventos */}
       <div className="space-y-6">
         {isLoading ? (
           <div className="text-center py-12">
@@ -324,76 +385,64 @@ const EventosPage = () => {
           </div>
         ) : filteredAndSortedEvents.length === 0 ? (
           <div className="text-center py-12">
-            <div className="mx-auto max-w-md">
-              <div className="mx-auto h-12 w-12 text-muted-foreground">
-                <Search className="h-full w-full" />
-              </div>
-              <h3 className="mt-4 text-lg font-medium text-foreground">
-                Nenhum evento encontrado
-              </h3>
-              <p className="mt-2 text-muted-foreground">
-                {searchTerm || Object.keys(activeFilters).length > 0
-                  ? 'Tente ajustar os filtros de pesquisa.'
-                  : 'Seja o primeiro a criar um evento para sua comunidade!'}
-              </p>
-              {(!searchTerm && Object.keys(activeFilters).length === 0) && (
-                <Button onClick={handleNovoEvento} className="mt-4">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Criar Primeiro Evento
-                </Button>
-              )}
-            </div>
+            <Search className="h-12 w-12 mx-auto text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-medium text-foreground">Nenhum evento encontrado</h3>
+            <p className="mt-2 text-muted-foreground">
+              {searchTerm || Object.keys(activeFilters).length > 0
+                ? 'Tente ajustar os filtros de pesquisa.'
+                : 'Seja o primeiro a criar um evento para sua comunidade!'}
+            </p>
+            {!searchTerm && Object.keys(activeFilters).length === 0 && (
+              <Button onClick={handleNovoEvento} className="mt-4">
+                <Plus className="h-4 w-4 mr-2" /> Criar Primeiro Evento
+              </Button>
+            )}
           </div>
         ) : (
           <>
-            {/* Grid de Eventos */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {paginatedEvents.map((evento) => (
                 <EventCard
                   key={evento.id}
                   evento={evento}
-                  onEventoClick={handleEventoClick}
-                  onEventoUpdate={handleEventoUpdate}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
+                  onEventoClick={() => handleVerDetalhes(evento)}
+                  onEventoUpdate={(e) =>
+                    setEventos((prev) => prev.map((ev) => (ev.id === e.id ? e : ev)))
+                  }
                 />
               ))}
             </div>
 
-            {/* Paginação */}
             {totalPages > 1 && (
               <nav className="flex items-center justify-center space-x-2 mt-8">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  aria-label="Página anterior"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                
+
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
                   return (
                     <Button
                       key={pageNum}
-                      variant={currentPage === pageNum ? "default" : "ghost"}
+                      variant={currentPage === pageNum ? 'default' : 'ghost'}
                       size="icon"
                       onClick={() => setCurrentPage(pageNum)}
-                      className={currentPage === pageNum ? "bg-primary text-primary-foreground" : ""}
                     >
                       {pageNum}
                     </Button>
                   );
                 })}
-                
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
-                  aria-label="Próxima página"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
