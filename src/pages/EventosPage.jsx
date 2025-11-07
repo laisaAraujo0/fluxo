@@ -221,11 +221,11 @@ const EventosPage = () => {
         </Button>
       </div>
 
-        {/* Estatísticas */}
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
-          <div className="bg-card p-5 rounded-2xl border shadow-md text-center w-full max-w-sm transition-transform hover:scale-105">
-        <div className="text-3xl font-bold text-primary">{eventos.length}</div>
-        <div className="text-lg text-muted-foreground mt-2">Total de Eventos</div>
+      {/* Estatísticas */}
+      <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="bg-card p-4 rounded-lg border">
+          <div className="text-2xl font-bold text-primary">{eventos.length}</div>
+          <div className="text-sm text-muted-foreground">Total de Eventos</div>
         </div>
         <div className="bg-card p-5 rounded-2xl border shadow-md text-center w-full max-w-sm transition-transform hover:scale-105">
           <div className="text-3xl font-bold text-green-600">
@@ -239,16 +239,15 @@ const EventosPage = () => {
           </div>
           <div className="text-lg text-muted-foreground mt-2">Pendentes</div>
         </div>
-          {/*<div className="bg-card p-4 rounded-lg border">
-            <div className="text-2xl font-bold text-red-600">
-              {eventos.reduce((sum, e) => sum + (e.curtidas?.length || 0), 0)}
-            </div>
-            <div className="text-sm text-muted-foreground">Total de Curtidas</div>
-          </div> */}   
-        </div>
+        {/* <div className="bg-card p-4 rounded-lg border">
+          <div className="text-2xl font-bold text-red-600">
+            {eventos.reduce((sum, e) => sum + (e.curtidas?.length || 0), 0)}
+          </div>
+          <div className="text-sm text-muted-foreground">Total de Curtidas</div>
+        </div> */}
       </div>
 
-      {/* 🔹 Barra de Pesquisa + Ordenação + Filtros */}
+      {/* Barra de Pesquisa + Ordenação + Filtros */}
       <div className="flex flex-wrap items-center gap-3 mb-4 mt-6">
         <div className="flex-1 min-w-240px relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -280,7 +279,7 @@ const EventosPage = () => {
         </Button>
       </div>
 
-      {/* 🔹 Painel de Filtros */}
+      {/* Painel de Filtros */}
       {isFiltersVisible && (
         <div className="bg-card border rounded-xl p-4 md:p-6 shadow-sm mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-4">
