@@ -221,29 +221,30 @@ const EventosPage = () => {
         </Button>
       </div>
 
-      {/* Estatísticas */}
-      <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-card p-4 rounded-lg border">
-          <div className="text-2xl font-bold text-primary">{eventos.length}</div>
-          <div className="text-sm text-muted-foreground">Total de Eventos</div>
+        {/* Estatísticas */}
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
+          <div className="bg-card p-5 rounded-2xl border shadow-md text-center w-full max-w-sm transition-transform hover:scale-105">
+        <div className="text-3xl font-bold text-primary">{eventos.length}</div>
+        <div className="text-lg text-muted-foreground mt-2">Total de Eventos</div>
         </div>
-        <div className="bg-card p-4 rounded-lg border">
-          <div className="text-2xl font-bold text-green-600">
-            {eventos.filter((e) => e.status === 'ativo').length}
+        <div className="bg-card p-5 rounded-2xl border shadow-md text-center w-full max-w-sm transition-transform hover:scale-105">
+          <div className="text-3xl font-bold text-green-600">
+            {eventos.filter(e => e.status === 'ativo').length}
           </div>
-          <div className="text-sm text-muted-foreground">Eventos Ativos</div>
+          <div className="text-lg text-muted-foreground mt-2">Eventos Ativos</div>
         </div>
-        <div className="bg-card p-4 rounded-lg border">
-          <div className="text-2xl font-bold text-yellow-600">
-            {eventos.filter((e) => e.status === 'pendente').length}
+        <div className="bg-card p-5 rounded-2xl border shadow-md text-center w-full max-w-sm transition-transform hover:scale-105">
+          <div className="text-3xl font-bold text-yellow-600">
+            {eventos.filter(e => e.status === 'pendente').length}
           </div>
-          <div className="text-sm text-muted-foreground">Pendentes</div>
+          <div className="text-lg text-muted-foreground mt-2">Pendentes</div>
         </div>
-        <div className="bg-card p-4 rounded-lg border">
-          <div className="text-2xl font-bold text-red-600">
-            {eventos.reduce((sum, e) => sum + (e.curtidas?.length || 0), 0)}
-          </div>
-          <div className="text-sm text-muted-foreground">Total de Curtidas</div>
+          {/*<div className="bg-card p-4 rounded-lg border">
+            <div className="text-2xl font-bold text-red-600">
+              {eventos.reduce((sum, e) => sum + (e.curtidas?.length || 0), 0)}
+            </div>
+            <div className="text-sm text-muted-foreground">Total de Curtidas</div>
+          </div> */}   
         </div>
       </div>
 

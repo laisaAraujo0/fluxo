@@ -195,6 +195,53 @@ const RegistroEvento = ({ onVoltar, onEventoAdicionado, eventoParaEditar }) => {
     );
   }
 
+  //loclizacao add
+  const handleMinhaLocalizacao = async () => {
+  if (!navigator.geolocation) {
+    toast.error("Geolocalização não é suportada neste navegador.");
+    return;
+  }
+
+  setCarregandoCoordenadas(true);
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const { latitude, longitude } = position.coords;
+      setCoordenadas({ latitude, longitude });
+
+      try {
+        // Chama um serviço para converter coordenadas em endereço (Reverse Geocoding)
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+        );
+        const data = await response.json();
+
+        const address = data.address || {};
+
+        setFormData((prev) => ({
+          ...prev,
+          endereco: address.road || "",
+          bairro: address.suburb || address.neighbourhood || "",
+          cidade: address.city || address.town || address.village || "",
+          estado: address.state || "",
+          cep: address.postcode || "",
+        }));
+
+        toast.success("Localização obtida com sucesso!");
+      } catch (error) {
+        console.error("Erro ao buscar endereço:", error);
+        toast.error("Erro ao obter o endereço da localização.");
+      } finally {
+        setCarregandoCoordenadas(false);
+      }
+    },
+    (error) => {
+      console.error("Erro de geolocalização:", error);
+      toast.error("Não foi possível obter sua localização.");
+      setCarregandoCoordenadas(false);
+    }
+  );
+};
+
   return (
     <div className="container mx-auto flex-grow px-4 sm:px-6 lg:px-8 py-12">
       <div className="mx-auto max-w-2xl">
@@ -249,7 +296,7 @@ const RegistroEvento = ({ onVoltar, onEventoAdicionado, eventoParaEditar }) => {
               <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
-                  <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Clique para enviar</span> ou arraste e solte</p>
+                  <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Clique para enviar</span></p>
                   <p className="text-xs text-muted-foreground">PNG, JPG ou GIF (MAX. 10MB)</p>
                 </div>
                 <input id="file-upload" name="fotos" type="file" className="hidden" onChange={handleFileUpload} accept="image/png, image/jpeg, image/gif" />
@@ -259,13 +306,13 @@ const RegistroEvento = ({ onVoltar, onEventoAdicionado, eventoParaEditar }) => {
               <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {existingImage && (
                   <div className="relative group">
-                    <img src={existingImage} alt="Imagem existente" className="w-full h-24 object-cover rounded-lg" />
+                    <img src={existingImage} alt="Imagem existente" className="w-full h-24 object-contain rounded-lg bg-muted" />
                     <button type="button" onClick={() => setExistingImage(null)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"><X className="h-3 w-3" /></button>
                   </div>
                 )}
                 {formData.fotos.map((file, index) => (
                   <div key={index} className="relative group">
-                    <img src={URL.createObjectURL(file)} alt={`Preview ${index}`} className="w-full h-24 object-cover rounded-lg" />
+                    <img src={URL.createObjectURL(file)} alt={`Preview ${index}`} className="w-full h-24 object-contain rounded-lg bg-muted" />
                     <button type="button" onClick={() => removePhoto(index)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"><X className="h-3 w-3" /></button>
                   </div>
                 ))}
@@ -275,7 +322,20 @@ const RegistroEvento = ({ onVoltar, onEventoAdicionado, eventoParaEditar }) => {
 
           {/* Endereço e Localização */}
           <div className="space-y-4 p-4 border rounded-lg">
-            <h3 className="font-medium text-foreground">Localização</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium text-foreground">Localização</h3>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleMinhaLocalizacao}
+                disabled={carregandoCoordenadas}
+                className="flex items-center gap-2"
+              >
+                <MapPin className="w-4 h-4" />
+                {carregandoCoordenadas ? "Carregando..." : "Minha Localização"}
+              </Button>
+            </div>
             <FormField id="cep" label="CEP" type="text" value={formData.cep} onChange={handleCepChange} placeholder="00000-000" required validation={validators.cep} />
             <FormField id="endereco" label="Endereço" type="text" value={formData.endereco} onChange={(e) => handleInputChange('endereco', e.target.value)} required />
             <div className="grid grid-cols-2 gap-4">

@@ -6,7 +6,7 @@ import GlobalSearch from './GlobalSearch';
 import CEPInput from './CEPInput';
 import { useUser } from '@/contexts/UserContext';
 import NotificationBell from './NotificationBell';
-import ThemeSwitcher from './ThemeSwitcher'; // Importando o ThemeSwitcher
+import ThemeSwitcher from './ThemeSwitcher'; 
 
 import {
   DropdownMenu,
