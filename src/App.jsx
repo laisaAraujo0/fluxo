@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { UserProvider, useUser } from './contexts/UserContext';
 import Layout from './components/Layout';
 import EventosPage from './pages/EventosPage';
+import DetalheEvento from './components/DetalheEvento';
 import ReclamacoesPage from './pages/ReclamacoesPage';
 import MapasPage from './pages/MapasPage';
 import LoginPage from './pages/LoginPage';
@@ -54,7 +55,7 @@ function ScrollToTopOnNavigate() {
   const location = useLocation();
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo(0, 0);
   }, [location.pathname]);
 
   return null;
@@ -70,7 +71,7 @@ function AppContent() {
   }, []);
 
   if (loading) {
-    return <LoadingScreen isVisible message="Carregando aplicação..." type="data" />;
+    return <LoadingScreen isVisible message="Carregando..." type="data" />;
   }
 
   return (

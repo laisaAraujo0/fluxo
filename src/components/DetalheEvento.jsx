@@ -22,6 +22,11 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
     setCurrentEvento(evento);
   }, [evento]);
 
+  // ✅ Scroll automático para o topo sempre que a página abre
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   const isLiked = currentEvento.curtidas?.some(like => like.userId === user?.id);
   const likesCount = currentEvento.curtidas?.length || 0;
   const commentsCount = currentEvento.comentarios?.length || 0;
@@ -68,7 +73,6 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
         setNewComment('');
         toast.success('Comentário adicionado!');
         
-        // Atualizar o evento
         const updatedEvent = eventService.getEventById(currentEvento.id);
         if (updatedEvent) {
           setCurrentEvento(updatedEvent);
@@ -114,7 +118,6 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
         console.log('Erro ao compartilhar:', error);
       }
     } else {
-      // Fallback: copiar URL para clipboard
       try {
         await navigator.clipboard.writeText(window.location.href);
         toast.success('Link copiado para a área de transferência!');
@@ -172,7 +175,7 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="max-w-4xl mx-auto">
-        {/* Cabeçalho */}
+
         <div className="mb-6">
           <Button 
             variant="ghost" 
@@ -185,20 +188,8 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Conteúdo Principal */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Imagem do Evento */}
-            {currentEvento.imageUrl && (
-              <div className="relative overflow-hidden rounded-lg">
-                <img
-                  src={currentEvento.imageUrl}
-                  alt={currentEvento.titulo}
-                  className="w-full h-64 md:h-80 object-cover"
-                />
-              </div>
-            )}
 
-            {/* Informações do Autor */}
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -232,7 +223,16 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
               </CardContent>
             </Card>
 
-            {/* Título e Descrição */}
+            {currentEvento.imageUrl && (
+              <div className="relative overflow-hidden rounded-lg">
+                <img
+                  src={currentEvento.imageUrl}
+                  alt={currentEvento.titulo}
+                  className="w-full h-64 md:h-80 object-cover"
+                />
+              </div>
+            )}
+
             <div className="space-y-4">
               <h1 className="text-3xl font-bold text-foreground">
                 {currentEvento.titulo}
@@ -242,7 +242,6 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
               </p>
             </div>
 
-            {/* Tags */}
             {currentEvento.tags && currentEvento.tags.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 <Tag className="h-4 w-4 text-muted-foreground" />
@@ -254,19 +253,19 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
               </div>
             )}
 
-	            {/* Botões de Ação */}
-	            <div className="flex items-center justify-between border-t border-b py-4">
-	              <div className="flex items-center space-x-6">
-	                {/* Botão Ver no Mapa */}
-	                <Button
-	                  variant="outline"
-	                  size="sm"
-	                  onClick={() => navigate(`/mapas?lat=${currentEvento.latitude || -23.5505}&lng=${currentEvento.longitude || -46.6333}`)}
-	                  className="flex items-center space-x-2"
-	                >
-	                  <MapPin className="h-4 w-4" />
-	                  <span>Ver no mapa</span>
-	                </Button>
+            <div className="flex items-center justify-between border-t border-b py-4">
+              <div className="flex items-center space-x-6">
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/mapas?lat=${currentEvento.latitude || -23.5505}&lng=${currentEvento.longitude || -46.6333}`)}
+                  className="flex items-center space-x-2"
+                >
+                  <MapPin className="h-4 w-4" />
+                  <span>Ver no mapa</span>
+                </Button>
+
                 <Button
                   variant="ghost"
                   size="sm"
@@ -296,7 +295,6 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
               </Button>
             </div>
 
-            {/* Seção de Comentários */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -305,7 +303,7 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Formulário de Novo Comentário */}
+
                 {isAuthenticated() ? (
                   <form onSubmit={handleCommentSubmit} className="space-y-3">
                     <Textarea
@@ -334,7 +332,6 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
 
                 <Separator />
 
-                {/* Lista de Comentários */}
                 {currentEvento.comentarios && currentEvento.comentarios.length > 0 ? (
                   <div className="space-y-4">
                     {currentEvento.comentarios.map((comment) => (
@@ -387,9 +384,9 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
             </Card>
           </div>
 
-          {/* Sidebar */}
+          {/* SIDEBAR */}
           <div className="space-y-6">
-            {/* Informações do Evento */}
+
             <Card>
               <CardHeader>
                 <CardTitle>Detalhes do Evento</CardTitle>
@@ -414,9 +411,9 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
                       <p className="font-medium">Data</p>
                       <p className="text-sm text-muted-foreground">
                         {formatDate(currentEvento.dataInicio)}
-                        {currentEvento.dataFim && currentEvento.dataFim !== currentEvento.dataInicio && 
-                          ` - ${formatDate(currentEvento.dataFim)}`
-                        }
+                        {currentEvento.dataFim &&
+                          currentEvento.dataFim !== currentEvento.dataInicio &&
+                          ` - ${formatDate(currentEvento.dataFim)}`}
                       </p>
                     </div>
                   </div>
@@ -458,7 +455,6 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
               </CardContent>
             </Card>
 
-            {/* Estatísticas */}
             <Card>
               <CardHeader>
                 <CardTitle>Estatísticas</CardTitle>
@@ -474,12 +470,16 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Participantes</span>
-                  <span className="font-medium">{currentEvento.participantes || 0}</span>
+                  <span className="font-medium">
+                    {currentEvento.participantes || 0}
+                  </span>
                 </div>
               </CardContent>
             </Card>
+
           </div>
         </div>
+
       </div>
     </div>
   );

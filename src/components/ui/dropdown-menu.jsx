@@ -7,7 +7,13 @@ import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 function DropdownMenu(props) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />
+  return (
+    <DropdownMenuPrimitive.Root
+      data-slot="dropdown-menu"
+      modal={false}   // ✅ CORREÇÃO AQUI
+      {...props}
+    />
+  )
 }
 
 function DropdownMenuPortal(props) {
@@ -73,7 +79,7 @@ function DropdownMenuCheckboxItem({ className, children, checked, ...props }) {
       className={cn(
         "relative flex select-none items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden cursor-default",
         "focus:bg-accent focus:text-accent-foreground",
-        "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        "data-disabled:pointer-events-none data-disabled:opacity-50",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
@@ -101,7 +107,7 @@ function DropdownMenuRadioItem({ className, children, ...props }) {
       className={cn(
         "relative flex select-none items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden cursor-default",
         "focus:bg-accent focus:text-accent-foreground",
-        "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        "data-disabled:pointer-events-none data-disabled:opacity-50",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
@@ -122,7 +128,7 @@ function DropdownMenuLabel({ className, inset, ...props }) {
     <DropdownMenuPrimitive.Label
       data-slot="dropdown-menu-label"
       data-inset={inset}
-      className={cn("px-2 py-1.5 text-sm font-medium data-[inset]:pl-8", className)}
+      className={cn("px-2 py-1.5 text-sm font-medium data-inset:pl-8", className)}
       {...props}
     />
   )
@@ -161,7 +167,7 @@ function DropdownMenuSubTrigger({ className, inset, children, ...props }) {
         "flex select-none items-center rounded-sm px-2 py-1.5 text-sm outline-hidden cursor-default",
         "focus:bg-accent focus:text-accent-foreground",
         "data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
-        "data-[inset]:pl-8",
+        "data-inset:pl-8",
         className
       )}
       {...props}
@@ -177,7 +183,7 @@ function DropdownMenuSubContent({ className, ...props }) {
     <DropdownMenuPrimitive.SubContent
       data-slot="dropdown-menu-sub-content"
       className={cn(
-        "z-[9999] min-w-[8rem] rounded-md border p-1 shadow-lg",
+        "z-9999 min-w-32 rounded-md border p-1 shadow-lg",
         "bg-popover text-popover-foreground",
         "data-[state=open]:animate-in data-[state=closed]:animate-out",
         "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",

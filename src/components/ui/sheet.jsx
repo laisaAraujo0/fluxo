@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 function Sheet({
   ...props
 }) {
-  return <SheetPrimitive.Root data-slot="sheet" {...props} />;
+  return <SheetPrimitive.Root data-slot="sheet" disableScrollLock={true} {...props} />;
 }
 
 function SheetTrigger({
