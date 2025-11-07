@@ -19,8 +19,8 @@ const Footer = () => {
   ];
 
   const redesSociais = [
-    { icon: Github, href: '#', label: 'GitHub' },
-    { icon: Instagram, href: '#', label: 'Instagram' },
+    { icon: Github, href: 'https://https://github.com/laisaAraujo0/fluxo', label: 'GitHub' },
+    { icon: Instagram, href: 'https://instagram.com/app_fluxo', label: 'Instagram' },
   ];
 
   return (
