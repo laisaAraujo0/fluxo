@@ -18,8 +18,8 @@ const ReclamacoesPage = () => {
     {
       id: 1,
       titulo: "Buraco na Rua Principal",
-      status: "PENDING",
-      priority: "HIGH",
+      status: "PENDENTE",
+      priority: "ALTA",
       likes: 15,
       comentarios: 5,
       categoria: "Infraestrutura",
@@ -29,8 +29,8 @@ const ReclamacoesPage = () => {
     {
       id: 2,
       titulo: "Iluminação Pública Defeituosa",
-      status: "RESOLVED",
-      priority: "MEDIUM",
+      status: "RESOLVIDO",
+      priority: "MÉDIA",
       likes: 20,
       comentarios: 10,
       categoria: "Serviços Públicos",
@@ -40,8 +40,8 @@ const ReclamacoesPage = () => {
     {
       id: 3,
       titulo: "Acúmulo de Lixo",
-      status: "PENDING",
-      priority: "LOW",
+      status: "PENDENTE",
+      priority: "BAIXA",
       likes: 5,
       comentarios: 2,
       categoria: "Meio Ambiente",
@@ -51,8 +51,8 @@ const ReclamacoesPage = () => {
     {
       id: 4,
       titulo: "Vazamento de Água",
-      status: "RESOLVED",
-      priority: "HIGH",
+      status: "RESOLVIDO",
+      priority: "ALTA",
       likes: 25,
       comentarios: 15,
       categoria: "Saneamento",
@@ -62,8 +62,8 @@ const ReclamacoesPage = () => {
     {
       id: 5,
       titulo: "Pichação em Prédio Público",
-      status: "PENDING",
-      priority: "MEDIUM",
+      status: "PENDENTE",
+      priority: "MÉDIA",
       likes: 10,
       comentarios: 3,
       categoria: "Segurança",
@@ -114,23 +114,23 @@ const ReclamacoesPage = () => {
 
   const getStatusBadgeVariant = (status) => {
     switch (status) {
-      case 'RESOLVED': return 'default';
-      case 'PENDING': return 'secondary';
+      case 'RESOLVIDO': return 'default';
+      case 'PENDENTE': return 'secondary';
       default: return 'outline';
     }
   };
 
   const getPrioridadeBadgeVariant = (priority) => {
     switch (priority) {
-      case 'HIGH': return 'destructive';
-      case 'MEDIUM': return 'secondary';
-      case 'LOW': return 'outline';
+      case 'ALTA': return 'destructive';
+      case 'MÉDIA': return 'secondary';
+      case 'BAIXA': return 'outline';
       default: return 'outline';
     }
   };
 
-  const problemasResolvidos = reclamacoes.filter(r => r.status === "RESOLVED").length;
-  const problemasPendentes = reclamacoes.filter(r => r.status === "PENDING").length;
+  const problemasResolvidos = reclamacoes.filter(r => r.status === "RESOLVIDO").length;
+  const problemasPendentes = reclamacoes.filter(r => r.status === "PENDENTE").length;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
