@@ -41,6 +41,10 @@ const MapasPage = () => {
   const [mostrarRaio, setMostrarRaio] = useState(true);
   const [coordenadasCentralizar, setCoorenadasCentralizar] = useState(null);
   const mapRef = useRef(null);
+  // Sugestões de busca (autocomplete)
+  const [sugestoes, setSugestoes] = useState([]);
+  const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
+
 
   // Carregar eventos do eventService
   useEffect(() => {
@@ -274,6 +278,26 @@ const MapasPage = () => {
     }));
   };
 
+  const gerarSugestoes = (texto) => {
+  if (!texto.trim()) {
+    setSugestoes([]);
+    setMostrarSugestoes(false);
+    return;
+  }
+
+  const textoBusca = texto.toLowerCase();
+
+  const resultados = eventos.filter(evento =>
+    evento.titulo.toLowerCase().includes(textoBusca) ||
+    evento.descricao.toLowerCase().includes(textoBusca) ||
+    evento.endereco?.toLowerCase().includes(textoBusca)
+  );
+
+  setSugestoes(resultados.slice(0, 5));
+  setMostrarSugestoes(true);
+};
+
+
   const getCategoriaColor = (categoria) => {
     const cores = {
       'infraestrutura': 'bg-blue-500',
@@ -385,12 +409,43 @@ const MapasPage = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <div className="relative w-full">
                 <Input
                   placeholder="Buscar eventos por título, descrição ou endereço..."
                   value={filtros.busca}
-                  onChange={(e) => handleFiltroChange('busca', e.target.value)}
+                  onChange={(e) => {
+                    const valor = e.target.value;
+                    handleFiltroChange('busca', valor);
+                    gerarSugestoes(valor);
+                  }}
+                  onFocus={() => sugestoes.length > 0 && setMostrarSugestoes(true)}
+                  onBlur={() => setTimeout(() => setMostrarSugestoes(false), 200)}
                   className="pl-10"
                 />
+
+                {mostrarSugestoes && sugestoes.length > 0 && (
+                  <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {sugestoes.map((evento) => (
+                      <div
+                        key={evento.id}
+                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                        onClick={() => {
+                          handleFiltroChange('busca', evento.titulo);
+                          setMostrarSugestoes(false);
+                          setEventosFiltrados([evento]);
+                          setEventoSelecionado(evento);
+                        }}
+                      >
+                        <p className="font-medium text-sm">{evento.titulo}</p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {evento.endereco || evento.descricao}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               </div>
               
               <div className="flex gap-2">
