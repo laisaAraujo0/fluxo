@@ -32,8 +32,8 @@ const EventFilters = ({ onFiltersApply }) => {
   return (
     <div className="relative">
       {/* Botão para mostrar filtros */}
-      <Button onClick={() => setIsVisible(!isVisible)} className="flex items-center gap-2 mb-4 bg-white text-black dark:bg-gray-900 hover:bg-gray-300">
-        <Filter className="h-3 w-4" /> Filtros
+      <Button onClick={() => setIsVisible(!isVisible)} className="flex items-center gap-2 mb-4 bg-white text-black dark:bg-black dark:text-white hover:bg-gray-300">
+        <Filter className="h-3 w-4 " /> Filtros
       </Button>
 
       <div className="relative">

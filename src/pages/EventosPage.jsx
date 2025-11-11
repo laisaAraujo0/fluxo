@@ -222,10 +222,10 @@ const EventosPage = () => {
       </div>
 
       {/* Estatísticas */}
-      <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-3">
-        <div className="bg-card p-4 rounded-lg border">
-          <div className="text-2xl font-bold text-primary">{eventos.length}</div>
-          <div className="text-sm text-muted-foreground">Total de Eventos</div>
+      <div className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex items-center justify-between">
+        <div className="bg-card p-5 rounded-2xl border shadow-md text-center w-full max-w-sm transition-transform hover:scale-105">
+          <div className="text-3xl font-bold text-primary">{eventos.length}</div>
+          <div className="text-lg text-muted-foreground mt-2">Total de Eventos</div>
         </div>
         <div className="bg-card p-5 rounded-2xl border shadow-md text-center w-full max-w-sm transition-transform hover:scale-105">
           <div className="text-3xl font-bold text-green-600">
