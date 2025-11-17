@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Trash2, Heart, MessageCircle, MapPin, Calendar, Clock, DollarSign, Eye } from 'lucide-react';
+import {
+  Pencil,
+  Trash2,
+  Heart,
+  MessageCircle,
+  MapPin,
+  Calendar,
+  Clock,
+  DollarSign,
+  Eye
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,13 +19,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { useUser } from '@/contexts/UserContext';
 import eventService from '@/services/eventService';
 import { toast } from 'sonner';
+import PropTypes from 'prop-types';
 
 const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useUser();
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  the [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   const isLiked = evento.curtidas?.some(like => like.userId === user?.id);
   const isAuthor = user && evento.autorId === user.id;
@@ -69,21 +80,23 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
     }
   };
 
-  const getStatusColor = (status) => ({
-    ativo: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-    pendente: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-    resolvido: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
-  }[status] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300');
+  const getStatusColor = (status) =>
+    ({
+      ativo: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+      pendente: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+      resolvido: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+    }[status] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300');
 
-  const getPriorityColor = (prioridade) => ({
-    alta: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-    urgente: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-    media: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
-    baixa: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-  }[prioridade] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300');
+  const getPriorityColor = (prioridade) =>
+    ({
+      alta: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+      urgente: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+      media: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+      baixa: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+    }[prioridade] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300');
 
-  const formatDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : '';
-  const formatDateTime = (d) => d ? new Date(d).toLocaleString('pt-BR') : '';
+  const formatDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : '');
+  const formatDateTime = (d) => (d ? new Date(d).toLocaleString('pt-BR') : '');
 
   return (
     <Card className="flex flex-col h-full group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-border">
@@ -130,10 +143,14 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
         {evento.tags?.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {evento.tags.slice(0, 3).map((tag, i) => (
-              <Badge key={i} variant="secondary" className="text-xs">{tag}</Badge>
+              <Badge key={i} variant="secondary" className="text-xs">
+                {tag}
+              </Badge>
             ))}
             {evento.tags.length > 3 && (
-              <Badge variant="secondary" className="text-xs">+{evento.tags.length - 3}</Badge>
+              <Badge variant="secondary" className="text-xs">
+                +{evento.tags.length - 3}
+              </Badge>
             )}
           </div>
         )}
@@ -207,17 +224,23 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
                 variant="outline"
                 size="sm"
                 className="text-blue-500 hover:text-blue-700"
-                onClick={(e) => { e.stopPropagation(); onEdit(evento); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(evento);
+                }}
               >
-                <Pencil className="h-4 w-4" /> 
+                <Pencil className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 className="text-red-500 hover:text-red-700"
-                onClick={(e) => { e.stopPropagation(); onDelete(evento.id); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(evento.id);
+                }}
               >
-                <Trash2 className="h-4 w-4 " /> 
+                <Trash2 className="h-4 w-4 " />
               </Button>
             </div>
           )}
@@ -298,15 +321,59 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
                 </div>
               </form>
             ) : (
-              <p className="text-xs text-muted-foreground text-center py-2">
-                Faça login para comentar
-              </p>
+              <p className="text-xs text-muted-foreground text-center py-2">Faça login para comentar</p>
             )}
           </div>
         )}
       </CardFooter>
     </Card>
   );
+};
+
+/* ================================
+   ✅ PropTypes Corrigidos
+================================ */
+EventCard.propTypes = {
+  evento: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    autorId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    autorNome: PropTypes.string,
+    autorAvatar: PropTypes.string,
+    titulo: PropTypes.string,
+    imageUrl: PropTypes.string,
+    endereco: PropTypes.string,
+    dataInicio: PropTypes.string,
+    dataFim: PropTypes.string,
+    horario: PropTypes.string,
+    preco: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    createdAt: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    status: PropTypes.string,
+    prioridade: PropTypes.string,
+    latitude: PropTypes.number,
+    longitude: PropTypes.number,
+    tags: PropTypes.arrayOf(PropTypes.string),
+
+    curtidas: PropTypes.arrayOf(
+      PropTypes.shape({
+        userId: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+      })
+    ),
+
+    comentarios: PropTypes.arrayOf(
+      PropTypes.shape({
+        id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        userId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        userName: PropTypes.string,
+        content: PropTypes.string,
+        createdAt: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+      })
+    )
+  }).isRequired,
+
+  onEventoClick: PropTypes.func,
+  onEventoUpdate: PropTypes.func,
+  onEdit: PropTypes.func,
+  onDelete: PropTypes.func
 };
 
 export default EventCard;

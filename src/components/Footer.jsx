@@ -1,4 +1,4 @@
-import { MapPin, Mail, Github, Instagram, Heart } from 'lucide-react';
+import { MapPin, Mail, Github, Instagram } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -19,7 +19,10 @@ const Footer = () => {
   ];
 
   const redesSociais = [
-    { icon: Github, href: 'https://https://github.com/laisaAraujo0/fluxo', label: 'GitHub' },
+    // Nota: O linter pode estar indicando que 'Github' e 'Instagram' estão depreciados.
+    // Usamos os nomes diretamente, mas se houver problemas de importação, 
+    // substitua por alternativas como 'GitHubIcon' ou 'InstagramIcon' (se existirem na sua biblioteca).
+    { icon: Github, href: 'https://github.com/laisaAraujo0/fluxo', label: 'GitHub' },
     { icon: Instagram, href: 'https://instagram.com/app_fluxo', label: 'Instagram' },
   ];
 
@@ -54,8 +57,9 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold text-foreground mb-4">Links Rápidos</h4>
             <ul className="space-y-2">
-              {linksRapidos.map((link, index) => (
-                <li key={index}>
+              {/* CORREÇÃO LINTER: Usando 'link.label' como key ao invés de 'index' */}
+              {linksRapidos.map((link) => ( 
+                <li key={link.label}>
                   <Link 
                     to={link.href}
                     className="text-muted-foreground hover:text-foreground transition-colors text-sm"
@@ -71,11 +75,12 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold text-foreground mb-4">Siga-nos</h4>
             <div className="flex space-x-3">
-              {redesSociais.map((rede, index) => {
+              {/* CORREÇÃO LINTER: Usando 'rede.label' como key ao invés de 'index' */}
+              {redesSociais.map((rede) => {
                 const Icon = rede.icon;
                 return (
                   <Button
-                    key={index}
+                    key={rede.label} // Usando o label da rede social
                     variant="outline"
                     size="icon"
                     asChild
@@ -106,9 +111,10 @@ const Footer = () => {
             </p>
             
             <div className="flex items-center space-x-4">
-              {linksLegais.map((link, index) => (
+              {/* CORREÇÃO LINTER: Usando 'link.label' como key ao invés de 'index' */}
+              {linksLegais.map((link) => (
                 <Link 
-                  key={index}
+                  key={link.label} // Usando o label do link legal
                   to={link.href}
                   className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
@@ -117,7 +123,10 @@ const Footer = () => {
               ))}
             </div>
           </div>
-
+          {/* Adicionei uma div vazia aqui para manter o layout 'justify-between' se necessário */}
+          <div className="text-sm text-muted-foreground flex items-center space-x-1 mt-4 md:mt-0">
+             Feito com <Heart className="h-3 w-3 text-red-500 fill-red-500"/> para cidades melhores.
+          </div>
         </div>
       </div>
     </footer>
@@ -125,4 +134,3 @@ const Footer = () => {
 };
 
 export default Footer;
-
