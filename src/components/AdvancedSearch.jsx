@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import PropTypes from 'prop-types'; // Adicionado para validação de props
-import { Search, Filter, MapPin, Calendar, Tag, SlidersHorizontal, X } from 'lucide-react'; // 'User' removido
+import { Search, Filter, MapPin, Calendar, Tag, User, SlidersHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -85,8 +84,7 @@ const AdvancedSearch = ({ onSearch, onClose }) => {
 
   const addFilter = (type, value, label) => {
     const filterId = `${type}-${value}`;
-    // Corrigido: Usando .some() ao invés de .find() para verificar a existência (melhor prática de linting)
-    if (!activeFilters.some(f => f.id === filterId)) { 
+    if (!activeFilters.find(f => f.id === filterId)) {
       setActiveFilters(prev => [...prev, { id: filterId, type, value, label }]);
     }
   };
@@ -450,12 +448,6 @@ const AdvancedSearch = ({ onSearch, onClose }) => {
       </CardContent>
     </Card>
   );
-};
-
-// Adicionado a validação de props
-AdvancedSearch.propTypes = {
-  onSearch: PropTypes.func.isRequired,
-  onClose: PropTypes.func.isRequired,
 };
 
 export default AdvancedSearch;

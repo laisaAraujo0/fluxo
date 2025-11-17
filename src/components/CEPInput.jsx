@@ -28,7 +28,7 @@ const CEPInput = () => {
 
   const formatCEP = (value) => {
     // Remove tudo que não é dígito
-    const digits = value.replaceAll(/\D/g, '');
+    const digits = value.replace(/\D/g, '');
     
     // Aplica a máscara XXXXX-XXX
     if (digits.length <= 5) {
@@ -82,8 +82,6 @@ const CEPInput = () => {
         toast.error(resultado.error || 'Erro ao buscar CEP');
       }
     } catch (error) {
-      // CORREÇÃO LINTER: Adicionando console.error para tratar a exceção
-      console.error('Erro ao processar CEP:', error);
       toast.error('Erro ao processar CEP');
     } finally {
       setIsLoading(false);
@@ -115,8 +113,6 @@ const CEPInput = () => {
         toast.error(resultado.error || 'Erro ao obter localização');
       }
     } catch (error) {
-      // CORREÇÃO LINTER: Adicionando console.error para tratar a exceção
-      console.error('Erro ao obter localização atual:', error);
       toast.error('Erro ao obter localização atual');
     } finally {
       setIsLoading(false);
@@ -130,8 +126,7 @@ const CEPInput = () => {
   };
 
   const handleLocationClick = () => {
-    // CORREÇÃO LINTER: Usando optional chaining (?.) para verificar 'coordenadas'
-    if (userLocation?.coordenadas) { 
+    if (userLocation && userLocation.coordenadas) {
       // Navegar para a página de mapas com a localização salva
       navigate('/mapas', {
         state: {

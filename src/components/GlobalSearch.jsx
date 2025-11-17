@@ -146,14 +146,14 @@ const GlobalSearch = ({ onClose }) => {
                   >
                     <div className="flex items-start gap-3">
                       <div
-                        className="w-12 h-12 bg-cover bg-center rounded shrink-0"
+                        className="w-12 h-12 bg-cover bg-center rounded flex-shrink-0"
                         style={{ backgroundImage: `url("${evento.imagem}")` }}
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <p className="font-medium line-clamp-1">{evento.titulo}</p>
                           <Badge
-                            className={`${getCategoryColor(evento.categoria)} text-white text-xs shrink-0`}
+                            className={`${getCategoryColor(evento.categoria)} text-white text-xs flex-shrink-0`}
                           >
                             {evento.categoria}
                           </Badge>
