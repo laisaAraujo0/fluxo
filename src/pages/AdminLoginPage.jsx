@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,12 +10,20 @@ import { Shield } from 'lucide-react';
 
 const AdminLoginPage = () => {
   const navigate = useNavigate();
-  const { login } = useUser();
+  const { user, login } = useUser();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     rememberMe: false
   });
+
+  // ----------- redireciona se já estiver logado ----------- //
+  useEffect(() => {
+    if (user && user.isAdmin) {
+      toast.info("Você já está logado!");
+      navigate('/admin');
+    }
+  }, [user, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -27,30 +35,48 @@ const AdminLoginPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Simular login de administrador
-    // Em produção, isso faria uma chamada à API
-    if (formData.email && formData.password) {
-      const admin = {
-        id: 100,
-        nomeOrgao: 'Prefeitura Municipal',
-        tipoOrgao: 'Prefeitura',
-        emailInstitucional: formData.email,
-        responsavel: {
-          nome: 'João Silva',
-          cargo: 'Secretário de Obras'
-        },
-        tipo: 'administrador',
-        isAdmin: true,
-        avatar: null
-      };
 
-      login(admin);
-      toast.success('Login administrativo realizado com sucesso!');
-      navigate('/admin');
-    } else {
-      toast.error('Por favor, preencha todos os campos');
+    // ----------- VALIDAÇÃO: email .gov.br ----------- //
+    if (!formData.email.endsWith('.gov.br')) {
+      toast.error('O email deve ser institucional e terminar com .gov.br');
+      return;
     }
+
+    // ----------- VALIDAÇÃO: senha forte ----------- //
+    const senhaForteRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+    if (!senhaForteRegex.test(formData.password)) {
+      toast.error(
+        'A senha deve ter no mínimo 8 caracteres, incluindo letra maiúscula, minúscula, número e símbolo.'
+      );
+      return;
+    }
+
+    // Valida preenchimento
+    if (!formData.email || !formData.password) {
+      toast.error('Por favor, preencha todos os campos');
+      return;
+    }
+
+    // Simulação de login administrativo
+    const admin = {
+      id: 100,
+      nomeOrgao: 'Prefeitura Municipal',
+      tipoOrgao: 'Prefeitura',
+      emailInstitucional: formData.email,
+      responsavel: {
+        nome: 'João Silva',
+        cargo: 'Secretário de Obras'
+      },
+      tipo: 'administrador',
+      isAdmin: true,
+      avatar: null
+    };
+
+    login(admin);
+    toast.success('Login administrativo realizado com sucesso!');
+    navigate('/admin');
   };
 
   return (
@@ -60,12 +86,15 @@ const AdminLoginPage = () => {
           <div className="rounded-full bg-primary/10 p-3 mb-4">
             <Shield className="h-8 w-8 text-primary" />
           </div>
+
           <h2 className="text-center text-3xl font-bold tracking-tight text-foreground">
             Acesso Administrativo
           </h2>
+
           <p className="mt-2 text-center text-sm text-muted-foreground">
             Área restrita para órgãos públicos
           </p>
+
           <p className="mt-1 text-center text-sm text-muted-foreground">
             Não tem uma conta institucional?{' '}
             <Link 
@@ -80,9 +109,7 @@ const AdminLoginPage = () => {
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           <div className="space-y-4">
             <div>
-              <Label htmlFor="email">
-                Email institucional
-              </Label>
+              <Label htmlFor="email">Email institucional</Label>
               <Input
                 id="email"
                 name="email"
@@ -97,10 +124,9 @@ const AdminLoginPage = () => {
                 Use o email oficial do seu órgão público
               </p>
             </div>
+
             <div>
-              <Label htmlFor="password">
-                Senha
-              </Label>
+              <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
                 name="password"
@@ -120,7 +146,7 @@ const AdminLoginPage = () => {
                 id="rememberMe"
                 name="rememberMe"
                 checked={formData.rememberMe}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   setFormData(prev => ({ ...prev, rememberMe: checked }))
                 }
               />
@@ -128,6 +154,7 @@ const AdminLoginPage = () => {
                 Manter conectado
               </Label>
             </div>
+
             <div className="text-sm">
               <Link 
                 to="/admin/esqueci-senha" 
@@ -138,11 +165,9 @@ const AdminLoginPage = () => {
             </div>
           </div>
 
-          <div>
-            <Button type="submit" className="w-full">
-              Acessar Dashboard
-            </Button>
-          </div>
+          <Button type="submit" className="w-full">
+            Acessar Dashboard
+          </Button>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
@@ -158,7 +183,7 @@ const AdminLoginPage = () => {
           <div className="text-center">
             <Link 
               to="/login" 
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background border border-input hover:bg-accent hover:text-accent-foreground h-10 py-2 px-4 w-full"
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors ring-offset-background border border-input hover:bg-accent hover:text-accent-foreground h-10 py-2 px-4 w-full"
             >
               Voltar ao login de usuário
             </Link>
@@ -176,3 +201,4 @@ const AdminLoginPage = () => {
 };
 
 export default AdminLoginPage;
+
