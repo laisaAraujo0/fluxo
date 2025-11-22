@@ -49,7 +49,7 @@ export const criarEvento = [
     console.error('Erro ao criar evento:', error);
     return res.status(500).json({ error: 'Erro ao criar evento' });
   }
-],
+}];
 
 // Listar eventos (com filtros e paginação)
 export const listarEventos = async (req, res) => {

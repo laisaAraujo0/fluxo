@@ -15,10 +15,16 @@ export const userRegistrationSchema = z.object({
 // Esquema de validação para criação de evento
 export const eventCreationSchema = z.object({
   title: z.string().min(5, "Título deve ter pelo menos 5 caracteres"),
-  description: z.string().min(20, "Descrição deve ter pelo menos 20 caracteres"),
+  description: z
+    .string()
+    .min(20, "Descrição deve ter pelo menos 20 caracteres"),
   location: z.string().min(5, "Localização deve ser especificada"),
   category: z.string().min(1, "Categoria é obrigatória"),
-  imageUrl: z.string().url("URL de imagem inválida").optional().or(z.literal("")),
+  imageUrl: z
+    .string()
+    .url("URL de imagem inválida")
+    .optional()
+    .or(z.literal("")),
 });
 
 // Função genérica para validar
@@ -32,12 +38,28 @@ export const validate = (schema) => (req, res, next) => {
         path: err.path.join("."),
         message: err.message,
       }));
+
       return res.status(400).json({
         error: "Erro de validação",
         details: errors,
       });
     }
+
     next(error);
   }
 };
 
+// Esquema de validação para criação de denúncia (complaint)
+export const complaintCreationSchema = z.object({
+  description: z
+    .string()
+    .min(10, "A descrição deve ter pelo menos 10 caracteres"),
+  
+  eventId: z
+    .string()
+    .min(1, "O ID do evento é obrigatório"),
+
+  userId: z
+    .string()
+    .min(1, "O ID do usuário é obrigatório"),
+});
