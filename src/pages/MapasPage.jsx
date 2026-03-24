@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { MapPin, Filter, Search, Navigation, Layers, Info, Eye, Heart, MessageCircle, Calendar, User, Zap, Plus, Minus, Settings, Target, Compass } from 'lucide-react';
+import { MapPin, Filter, Search, Navigation, Layers, Info, Eye, Heart, MessageCircle, Calendar, User, Zap, Plus, Minus, Settings, Target, Compass, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -389,7 +389,7 @@ const MapasPage = () => {
               onClick={() => setModoVisualizacao('mapa')}
               className="flex items-center gap-2"
             >
-              <MapPin className="h-4 w-4" />
+              <Map className="h-4 w-4" />
               Mapa
             </Button>
             <Button

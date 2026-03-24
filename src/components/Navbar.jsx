@@ -1,12 +1,24 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { MapPin, Menu, User, LayoutDashboard, X, LogOut, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import GlobalSearch from './GlobalSearch';
 import CEPInput from './CEPInput';
 import { useUser } from '@/contexts/UserContext';
 import NotificationBell from './NotificationBell';
 import ThemeSwitcher from './ThemeSwitcher'; 
+
+import { 
+  MapPin, 
+  CalendarDays,
+  Map,
+  Megaphone,
+  Menu, 
+  User, 
+  LayoutDashboard,
+  X, 
+  LogOut, 
+  Bell 
+} from 'lucide-react';
 
 import {
   DropdownMenu,
@@ -33,13 +45,13 @@ const Navbar = () => {
   };
 
   const navItems = [
-    { path: '/', label: 'Eventos', icon: MapPin },
-    { path: '/mapas', label: 'Mapas', icon: MapPin },
+    { path: '/', label: 'Eventos', icon: CalendarDays },
+    { path: '/mapas', label: 'Mapas', icon: Map },
   ];
 
   // Adicionar item de reclamações apenas para usuários não-admin
   if (isAuthenticated() && !isAdmin()) {
-    navItems.push({ path: '/reclamacoes', label: 'Reclamações', icon: MapPin });
+    navItems.push({ path: '/reclamacoes', label: 'Reclamações', icon: Megaphone});
   }
 
   const closeMobileMenu = () => {

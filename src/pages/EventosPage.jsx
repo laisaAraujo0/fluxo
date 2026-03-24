@@ -260,7 +260,7 @@ const EventosPage = () => {
         </div>
 
         {/* Estatísticas */}
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
+        {/*<div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
           <div className="bg-card p-5 rounded-2xl border shadow-md text-center w-full max-w-sm transition-transform hover:scale-105">
         <div className="text-3xl font-bold text-primary">{eventos.length}</div>
         <div className="text-lg text-muted-foreground mt-2">Total de Eventos</div>
@@ -282,14 +282,15 @@ const EventosPage = () => {
               {eventos.reduce((sum, e) => sum + (e.curtidas?.length || 0), 0)}
             </div>
             <div className="text-sm text-muted-foreground">Total de Curtidas</div>
-          </div> */}   
-        </div>
+          </div>   
+        </div> */} 
       </div>
 
       {/* Barra de Pesquisa e Filtros */}
       <div className="mb-6 space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
+
+        {/* Linha de Busca */}
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Pesquisar eventos..."
@@ -298,8 +299,11 @@ const EventosPage = () => {
               className="pl-10"
             />
           </div>
+          {/* Linha do Select e Filtros */}
+          <div className ="flex items-center justify-between gap-4 w-full">
+
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectTrigger className="flex-1 h-10">
               <SelectValue placeholder="Ordenar por" />
             </SelectTrigger>
             <SelectContent>
@@ -309,10 +313,12 @@ const EventosPage = () => {
               <SelectItem value="comentarios">Mais Comentados</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-
+      
         {/* Filtros Avançados */}
-        <EventFilters onFiltersApply={handleFiltersChange} />
+           <div className="ml-auto">
+    <EventFilters onFiltersApply={handleFiltersChange} />
+           </div>
+          </div>
       </div>
 
       {/* Lista de Eventos */}
