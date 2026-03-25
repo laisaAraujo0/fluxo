@@ -1,5 +1,13 @@
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Home, ArrowLeft, Search, AlertTriangle } from 'lucide-react';
+
+import { 
+  MapPin, 
+  Home, 
+  ArrowLeft, 
+  Search, 
+  AlertTriangle
+} from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
