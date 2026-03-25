@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, User, Edit, Lock, Bell, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,9 +7,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useUser } from '@/contexts/UserContext';
 import userProfileService from '@/services/userProfileService';
+import { toast } from 'sonner';
 
 const ConfiguracoesPerfil = ({ userData, setUserData, onVoltar, initialSection = "perfil" }) => {
-  const { updateUser } = useUser();
+  const { updateUser, user } = useUser();
   const [activeSection, setActiveSection] = useState(initialSection);
   const [isLoading, setIsLoading] = useState(false);
   const [configuracoes, setConfiguracoes] = useState({
@@ -17,20 +18,47 @@ const ConfiguracoesPerfil = ({ userData, setUserData, onVoltar, initialSection =
     mostrarEmail: userData.privacidade?.mostrarEmail ?? true,
     mostrarCidade: userData.privacidade?.mostrarCidade ?? true,
     mostrarTelefone: userData.privacidade?.mostrarTelefone ?? false,
-    notificacaoComentarios: userData.notificacaoComentarios ?? true,
-    notificacaoMencoes: userData.notificacaoMencoes ?? true,
-    notificacaoSeguidores: userData.notificacaoSeguidores ?? false,
+    notificacaoCurtida: userData.notificacaoCurtida ?? true,
+    notificacaoComentario: userData.notificacaoComentario ?? true,
+    notificacaoAtualizacaoSite: userData.notificacaoAtualizacaoSite ?? true,
+    notificacaoAprovacaoPublica: userData.notificacaoAprovacaoPublica ?? true,
     novoUsuarioBloquear: ''
   });
 
   const [editableUserData, setEditableUserData] = useState({
     nome: userData.nome || '',
     email: userData.email || '',
-    bio: userData.bio || '',
     cidade: userData.cidade || '',
     estado: userData.estado || '',
     telefone: userData.telefone || '',
+    // REMOVIDO: bio: userData.bio || '',
   });
+
+  // Sincronizar dados quando userData muda (vindo do contexto)
+  useEffect(() => {
+    if (userData) {
+      setEditableUserData({
+        nome: userData.nome || '',
+        email: userData.email || '',
+        cidade: userData.cidade || '',
+        estado: userData.estado || '',
+        telefone: userData.telefone || '',
+        // REMOVIDO: bio: userData.bio || '',
+      });
+
+      setConfiguracoes(prev => ({
+        ...prev,
+        perfilPublico: userData.privacidade?.perfilPublico ?? true,
+        mostrarEmail: userData.privacidade?.mostrarEmail ?? true,
+        mostrarCidade: userData.privacidade?.mostrarCidade ?? true,
+        mostrarTelefone: userData.privacidade?.mostrarTelefone ?? false,
+        notificacaoCurtida: userData.notificacaoCurtida ?? true,
+        notificacaoComentario: userData.notificacaoComentario ?? true,
+        notificacaoAtualizacaoSite: userData.notificacaoAtualizacaoSite ?? true,
+        notificacaoAprovacaoPublica: userData.notificacaoAprovacaoPublica ?? true,
+      }));
+    }
+  }, [userData]);
 
   const [usuariosBloqueados] = useState([
     {
@@ -66,9 +94,14 @@ const ConfiguracoesPerfil = ({ userData, setUserData, onVoltar, initialSection =
     
     try {
       // Validar dados
-      const validation = userProfileService.validateProfileData(editableUserData);
+      // Se userProfileService.validateProfileData não puder lidar com a falta de 'bio',
+      // você precisará modificá-lo ou passar apenas os campos existentes.
+      const dataToValidate = { ...editableUserData };
+      // delete dataToValidate.bio; // Se você usasse 'bio' no editableUserData.
+      const validation = userProfileService.validateProfileData(dataToValidate);
+      
       if (!validation.isValid) {
-        alert(`Erro de validação: ${Object.values(validation.errors).join(', ')}`);
+        toast.error(`Erro de validação: ${Object.values(validation.errors).join(', ')}`);
         setIsLoading(false);
         return;
       }
@@ -76,41 +109,63 @@ const ConfiguracoesPerfil = ({ userData, setUserData, onVoltar, initialSection =
       // Preparar dados para envio
       const profileData = {
         ...editableUserData,
-        perfilPublico: configuracoes.perfilPublico,
-        mostrarEmail: configuracoes.mostrarEmail,
-        mostrarCidade: configuracoes.mostrarCidade,
-        mostrarTelefone: configuracoes.mostrarTelefone,
-        notificacaoComentarios: configuracoes.notificacaoComentarios,
-        notificacaoMencoes: configuracoes.notificacaoMencoes,
-        notificacaoSeguidores: configuracoes.notificacaoSeguidores,
+        // REMOVIDO: bio: editableUserData.bio,
+        privacidade: { // Ajustado para enviar 'privacidade' como objeto, se necessário
+          perfilPublico: configuracoes.perfilPublico,
+          mostrarEmail: configuracoes.mostrarEmail,
+          mostrarCidade: configuracoes.mostrarCidade,
+          mostrarTelefone: configuracoes.mostrarTelefone,
+        },
+        notificacaoCurtida: configuracoes.notificacaoCurtida,
+        notificacaoComentario: configuracoes.notificacaoComentario,
+        notificacaoAtualizacaoSite: configuracoes.notificacaoAtualizacaoSite,
+        notificacaoAprovacaoPublica: configuracoes.notificacaoAprovacaoPublica,
       };
 
       // Atualizar no backend
-      const result = await userProfileService.updateUserProfile(profileData);
+      // Verifica se o userProfileService.updateUserProfile lida bem com a ausência de 'bio'
+      await userProfileService.updateUserProfile(profileData);
 
-      // Atualizar estado local
+      // Atualizar estado local (userData) com os dados salvos
       setUserData(prev => ({
         ...prev,
         ...editableUserData,
+        // REMOVIDO: bio: editableUserData.bio,
         privacidade: {
           perfilPublico: configuracoes.perfilPublico,
           mostrarEmail: configuracoes.mostrarEmail,
           mostrarCidade: configuracoes.mostrarCidade,
           mostrarTelefone: configuracoes.mostrarTelefone,
         },
-        notificacaoComentarios: configuracoes.notificacaoComentarios,
-        notificacaoMencoes: configuracoes.notificacaoMencoes,
-        notificacaoSeguidores: configuracoes.notificacaoSeguidores,
+        notificacaoCurtida: configuracoes.notificacaoCurtida,
+        notificacaoComentario: configuracoes.notificacaoComentario,
+        notificacaoAtualizacaoSite: configuracoes.notificacaoAtualizacaoSite,
+        notificacaoAprovacaoPublica: configuracoes.notificacaoAprovacaoPublica,
       }));
 
-      // Atualizar contexto do usuário
-      updateUser(result.usuario);
+      // Atualizar contexto do usuário com os dados sincronizados
+      updateUser({
+        nome: editableUserData.nome,
+        email: editableUserData.email,
+        cidade: editableUserData.cidade,
+        estado: editableUserData.estado,
+        telefone: editableUserData.telefone,
+        // REMOVIDO: bio: editableUserData.bio,
+        perfilPublico: configuracoes.perfilPublico,
+        mostrarEmail: configuracoes.mostrarEmail,
+        mostrarCidade: configuracoes.mostrarCidade,
+        mostrarTelefone: configuracoes.mostrarTelefone,
+        notificacaoCurtida: configuracoes.notificacaoCurtida,
+        notificacaoComentario: configuracoes.notificacaoComentario,
+        notificacaoAtualizacaoSite: configuracoes.notificacaoAtualizacaoSite,
+        notificacaoAprovacaoPublica: configuracoes.notificacaoAprovacaoPublica,
+      });
 
-      alert("Configurações salvas com sucesso!");
+      toast.success("Configurações salvas com sucesso!");
       onVoltar();
     } catch (error) {
       console.error('Erro ao salvar configurações:', error);
-      alert("Erro ao salvar configurações. Tente novamente.");
+      toast.error("Erro ao salvar configurações. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
@@ -118,15 +173,25 @@ const ConfiguracoesPerfil = ({ userData, setUserData, onVoltar, initialSection =
 
   const handleDesbloquear = (userId) => {
     console.log('Desbloqueando usuário:', userId);
-    alert('Usuário desbloqueado!');
+    toast.info('Usuário desbloqueado!');
   };
 
   const handleBloquearUsuario = () => {
     if (configuracoes.novoUsuarioBloquear.trim()) {
       console.log('Bloqueando usuário:', configuracoes.novoUsuarioBloquear);
-      alert(`Usuário ${configuracoes.novoUsuarioBloquear} bloqueado!`);
+      toast.success(`Usuário ${configuracoes.novoUsuarioBloquear} bloqueado!`);
       handleConfigChange('novoUsuarioBloquear', '');
     }
+  };
+
+  const { logout } = useUser();
+
+  const handleLogout = () => {
+    console.log('Executando logout...');
+    logout(); // Chamada real de logout
+    // O redirecionamento para /login deve ser tratado pelo router principal após o logout,
+    // mas adicionamos um fallback para garantir.
+    window.location.href = '/login'; 
   };
 
   const menuItems = [
@@ -138,10 +203,10 @@ const ConfiguracoesPerfil = ({ userData, setUserData, onVoltar, initialSection =
   ];
 
   return (
-    <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 sm:py-8 overflow-y-auto">
       {/* Cabeçalho */}
-      <div className="mb-8">
-        <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="mb-8 overflow-y-auto">
+        <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground overflow-y-auto">
           <Button 
             variant="ghost" 
             size="sm" 
@@ -154,33 +219,33 @@ const ConfiguracoesPerfil = ({ userData, setUserData, onVoltar, initialSection =
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8 overflow-y-auto">
         {/* Sidebar */}
-        <div className="md:col-span-1">
-          <div className="flex flex-col items-center gap-4 text-center md:items-start md:text-left">
-            <div className="relative">
+        <div className="md:col-span-1 overflow-y-auto">
+          <div className="flex flex-col items-center gap-4 text-center md:items-start md:text-left overflow-y-auto">
+            <div className="relative overflow-y-auto">
               <div 
                 className="h-24 w-24 rounded-full bg-cover bg-center ring-4 ring-background"
                 style={{
-                   backgroundImage: `url(${userData.profilePic || "https://via.placeholder.com/150"})`
-          }}
+                    backgroundImage: `url(${userData.profilePic || "https://via.placeholder.com/150"})`
+              }}
               />
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col overflow-y-auto">
               <h2 className="text-2xl font-bold text-foreground"> {userData?.nome || 'Usuário'}</h2>
               <p className="text-sm text-muted-foreground">{userData?.email || '@usuario'}</p>
             </div>
 
             {/* Menu de navegação */}
-            <nav className="w-full">
-              <ul className="space-y-1">
+            <nav className="w-full overflow-y-auto">
+              <ul className="space-y-1 overflow-y-auto">
                 {menuItems.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <li key={item.id}>
+                    <li key={item.id} className="overflow-y-auto">
                       <button
                         onClick={() => setActiveSection(item.id)}
-                        className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium w-full text-left transition-colors ${
+                        className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium w-full text-left transition-colors overflow-y-auto ${
                           activeSection === item.id
                             ? 'bg-muted text-primary'
                             : item.danger
@@ -200,10 +265,10 @@ const ConfiguracoesPerfil = ({ userData, setUserData, onVoltar, initialSection =
         </div>
 
         {/* Conteúdo principal */}
-        <div className="md:col-span-3">
+        <div className="md:col-span-3 overflow-y-auto">
           {activeSection === 'privacidade' && (
-            <div className="space-y-8">
-              <div>
+            <div className="space-y-8 overflow-y-auto">
+              <div className="overflow-y-auto">
                 <h3 className="text-2xl font-bold text-foreground">Configurações de Privacidade</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Controle como suas informações são vistas e compartilhadas na plataforma.
@@ -211,8 +276,8 @@ const ConfiguracoesPerfil = ({ userData, setUserData, onVoltar, initialSection =
               </div>
 
               {/* Visibilidade do Perfil */}
-              <div className="space-y-6 rounded-lg border border-border p-6">
-                <div className="space-y-2">
+              <div className="space-y-6 rounded-lg border border-border p-6 overflow-y-auto">
+                <div className="space-y-2 overflow-y-auto">
                   <h4 className="text-lg font-semibold text-foreground">Visibilidade do Perfil</h4>
                   <p className="text-sm text-muted-foreground">
                     Decida quem pode ver seu perfil e suas atividades.
@@ -222,11 +287,11 @@ const ConfiguracoesPerfil = ({ userData, setUserData, onVoltar, initialSection =
                 <RadioGroup 
                   value={configuracoes.perfilPublico ? 'publico' : 'privado'}
                   onValueChange={(value) => handleConfigChange('perfilPublico', value === 'publico')}
-                  className="space-y-4"
+                  className="space-y-4 overflow-y-auto"
                 >
-                  <div className="flex items-start space-x-3">
+                  <div className="flex items-start space-x-3 overflow-y-auto">
                     <RadioGroupItem value="publico" id="publico" className="mt-1" />
-                    <div className="space-y-1">
+                    <div className="space-y-1 overflow-y-auto">
                       <Label htmlFor="publico" className="font-medium text-foreground">
                         Público
                       </Label>
@@ -235,9 +300,9 @@ const ConfiguracoesPerfil = ({ userData, setUserData, onVoltar, initialSection =
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-start space-x-3">
+                  <div className="flex items-start space-x-3 overflow-y-auto">
                     <RadioGroupItem value="privado" id="privado" className="mt-1" />
-                    <div className="space-y-1">
+                    <div className="space-y-1 overflow-y-auto">
                       <Label htmlFor="privado" className="font-medium text-foreground">
                         Privado
                       </Label>
@@ -248,9 +313,9 @@ const ConfiguracoesPerfil = ({ userData, setUserData, onVoltar, initialSection =
                   </div>
                 </RadioGroup>
 
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
+                <div className="space-y-4 overflow-y-auto">
+                  <div className="flex items-center justify-between overflow-y-auto">
+                    <div className="overflow-y-auto">
                       <h5 className="font-medium text-foreground">Visibilidade do Email</h5>
                       <p className="text-sm text-muted-foreground">
                         Permitir que outros usuários vejam seu endereço de email.
@@ -261,8 +326,8 @@ const ConfiguracoesPerfil = ({ userData, setUserData, onVoltar, initialSection =
                       onCheckedChange={(checked) => handleConfigChange('mostrarEmail', checked)}
                     />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex items-center justify-between overflow-y-auto">
+                    <div className="overflow-y-auto">
                       <h5 className="font-medium text-foreground">Visibilidade da Cidade</h5>
                       <p className="text-sm text-muted-foreground">
                         Permitir que outros usuários vejam sua cidade e estado.
@@ -276,217 +341,114 @@ const ConfiguracoesPerfil = ({ userData, setUserData, onVoltar, initialSection =
                 </div>
               </div>
 
-              {/* Gerenciar Notificações */}
-              <div className="space-y-6 rounded-lg border border-border p-6">
-                <div className="space-y-2">
-                  <h4 className="text-lg font-semibold text-foreground">Gerenciar Notificações</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Escolha quais notificações você deseja receber.
-                  </p>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h5 className="font-medium text-foreground">Novos comentários em suas postagens</h5>
-                      <p className="text-sm text-muted-foreground">
-                        Receba notificações quando alguém comentar em seus eventos.
-                      </p>
-                    </div>
-                    <Switch
-                      checked={configuracoes.notificacaoComentarios}
-                      onCheckedChange={(checked) => handleConfigChange('notificacaoComentarios', checked)}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h5 className="font-medium text-foreground">Menções</h5>
-                      <p className="text-sm text-muted-foreground">
-                        Seja notificado quando alguém mencionar você.
-                      </p>
-                    </div>
-                    <Switch
-                      checked={configuracoes.notificacaoMencoes}
-                      onCheckedChange={(checked) => handleConfigChange('notificacaoMencoes', checked)}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h5 className="font-medium text-foreground">Novos seguidores</h5>
-                      <p className="text-sm text-muted-foreground">
-                        Receba uma notificação quando um novo usuário seguir você.
-                      </p>
-                    </div>
-                    <Switch
-                      checked={configuracoes.notificacaoSeguidores}
-                      onCheckedChange={(checked) => handleConfigChange('notificacaoSeguidores', checked)}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Usuários Bloqueados */}
-              <div className="space-y-6 rounded-lg border border-border p-6">
-                <div className="space-y-2">
-                  <h4 className="text-lg font-semibold text-foreground">Usuários Bloqueados</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Usuários bloqueados não poderão ver seu perfil ou interagir com você.
-                  </p>
-                </div>
-                
-                <div className="space-y-4">
-                  {usuariosBloqueados.map((usuario) => (
-                    <div key={usuario.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div 
-                          className="h-10 w-10 rounded-full bg-cover bg-center"
-                          style={{ backgroundImage: `url("${usuario.avatar}")` }}
-                        />
-                        <div>
-                          <p className="font-medium text-foreground">{usuario.nome}</p>
-                          <p className="text-sm text-muted-foreground">{usuario.username}</p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDesbloquear(usuario.id)}
-                      >
-                        Desbloquear
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="mt-6">
-                  <Label htmlFor="block-user" className="block text-sm font-medium text-foreground">
-                    Bloquear um novo usuário
-                  </Label>
-                  <div className="mt-1 flex items-center gap-2">
-                    <Input
-                      id="block-user"
-                      value={configuracoes.novoUsuarioBloquear}
-                      onChange={(e) => handleConfigChange('novoUsuarioBloquear', e.target.value)}
-                      placeholder="Digite o @usuário"
-                      className="flex-1"
-                    />
-                    <Button onClick={handleBloquearUsuario}>
-                      Bloquear
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
               {/* Botões de ação */}
-              <div className="flex justify-end gap-3 pt-4">
-                <Button variant="outline" onClick={onVoltar}>
+              <div className="flex justify-end gap-3 pt-4 overflow-y-auto">
+                <Button variant="outline" onClick={onVoltar} disabled={isLoading}>
                   Cancelar
                 </Button>
-                <Button onClick={handleSalvar}>
-                  Salvar
+                <Button onClick={handleSalvar} disabled={isLoading}>
+                  {isLoading ? 'Salvando...' : 'Salvar'}
                 </Button>
               </div>
             </div>
           )}
 
           {activeSection === 'perfil' && (
-            <div className="space-y-8">
-              <div>
+            <div className="space-y-8 overflow-y-auto">
+              <div className="overflow-y-auto">
                 <h3 className="text-2xl font-bold text-foreground">Informações do Perfil</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Visualize suas informações pessoais cadastradas.
                 </p>
               </div>
 
-              <div className="space-y-4 rounded-lg border border-border p-6">
-                <div className="flex items-center justify-between">
+              <div className="space-y-4 rounded-lg border border-border p-6 overflow-y-auto">
+                <div className="flex items-center justify-between overflow-y-auto">
                   <p className="font-medium text-foreground">Nome:</p>
                   <p className="text-muted-foreground">{userData.nome}</p>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between overflow-y-auto">
                   <p className="font-medium text-foreground">Email:</p>
                   <p className="text-muted-foreground">
                     {userData.privacidade.mostrarEmail ? userData.email : "Privado"}
                   </p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-foreground">Nome de Usuário:</p>
-                  <p className="text-muted-foreground">{userData.username}</p>
-                </div>
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-foreground">Bio:</p>
-                  <p className="text-muted-foreground">{userData.bio}</p>
-                </div>
-                <div className="flex items-center justify-between">
+
+                {/* REMOVIDO: {userData.bio && (...)} */}
+                
+                <div className="flex items-center justify-between overflow-y-auto">
                   <p className="font-medium text-foreground">Cidade:</p>
                   <p className="text-muted-foreground">
                     {userData.privacidade.mostrarCidade ? userData.cidade : "Privado"}
                   </p>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between overflow-y-auto">
                   <p className="font-medium text-foreground">Estado:</p>
                   <p className="text-muted-foreground">
                     {userData.privacidade.mostrarCidade ? userData.estado : "Privado"}
                   </p>
                 </div>
+                {userData.telefone && (
+                  <div className="flex items-center justify-between overflow-y-auto">
+                    <p className="font-medium text-foreground">Telefone:</p>
+                    <p className="text-muted-foreground">
+                      {userData.privacidade.mostrarTelefone ? userData.telefone : "Privado"}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {activeSection === 'editar' && (
-            <div className="space-y-8">
-              <div>
+            <div className="space-y-8 overflow-y-auto">
+              <div className="overflow-y-auto">
                 <h3 className="text-2xl font-bold text-foreground">Editar Informações</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Atualize seus dados pessoais.
                 </p>
               </div>
 
-              <div className="space-y-4 rounded-lg border border-border p-6">
-                <div>
+              <div className="space-y-4 rounded-lg border border-border p-6 overflow-y-auto">
+                <div className="overflow-y-auto">
                   <Label htmlFor="nome">Nome</Label>
                   <Input
                     id="nome"
                     value={editableUserData.nome}
                     onChange={(e) => handleEditableDataChange("nome", e.target.value)}
+                    className="overflow-x-auto"
                   />
                 </div>
-                <div>
+                <div className="overflow-y-auto">
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
                     type="email"
                     value={editableUserData.email}
                     onChange={(e) => handleEditableDataChange("email", e.target.value)}
+                    className="overflow-x-auto"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="bio">Bio</Label>
-                  <Input
-                    id="bio"
-                    value={editableUserData.bio}
-                    onChange={(e) => handleEditableDataChange("bio", e.target.value)}
-                  />
-                </div>
-                <div>
+                {/* REMOVIDO: Campo de input para Bio */}
+                <div className="overflow-y-auto">
                   <Label htmlFor="cidade">Cidade</Label>
                   <Input
                     id="cidade"
                     value={editableUserData.cidade}
                     onChange={(e) => handleEditableDataChange("cidade", e.target.value)}
+                    className="overflow-x-auto"
                   />
                 </div>
-                <div>
+                <div className="overflow-y-auto">
                   <Label htmlFor="estado">Estado</Label>
                   <Input
                     id="estado"
                     value={editableUserData.estado}
                     onChange={(e) => handleEditableDataChange("estado", e.target.value)}
+                    className="overflow-x-auto"
                   />
                 </div>
-                <div>
+                <div className="overflow-y-auto">
                   <Label htmlFor="telefone">Telefone</Label>
                   <Input
                     id="telefone"
@@ -494,12 +456,13 @@ const ConfiguracoesPerfil = ({ userData, setUserData, onVoltar, initialSection =
                     value={editableUserData.telefone}
                     onChange={(e) => handleEditableDataChange("telefone", e.target.value)}
                     placeholder="(11) 99999-9999"
+                    className="overflow-x-auto"
                   />
                 </div>
               </div>
 
               {/* Botões de ação para edição */}
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex justify-end gap-3 pt-4 overflow-y-auto">
                 <Button variant="outline" onClick={onVoltar} disabled={isLoading}>
                   Cancelar
                 </Button>
@@ -511,14 +474,94 @@ const ConfiguracoesPerfil = ({ userData, setUserData, onVoltar, initialSection =
           )}
 
           {activeSection === 'notificacoes' && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Seção de notificações em desenvolvimento.</p>
+            <div className="space-y-8 overflow-y-auto">
+              <div className="overflow-y-auto">
+                <h3 className="text-2xl font-bold text-foreground">Configurações de Notificação</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Gerencie quais notificações você deseja receber.
+                </p>
+              </div>
+
+              <div className="space-y-6 rounded-lg border border-border p-6 overflow-y-auto">
+                <div className="flex items-center justify-between overflow-y-auto">
+                  <div className="overflow-y-auto">
+                    <h5 className="font-medium text-foreground">Curtidas</h5>
+                    <p className="text-sm text-muted-foreground">
+                      Receber notificações quando alguém curtir suas postagens ou eventos.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={configuracoes.notificacaoCurtida}
+                    onCheckedChange={(checked) => handleConfigChange('notificacaoCurtida', checked)}
+                  />
+                </div>
+                <div className="flex items-center justify-between overflow-y-auto">
+                  <div className="overflow-y-auto">
+                    <h5 className="font-medium text-foreground">Comentários</h5>
+                    <p className="text-sm text-muted-foreground">
+                      Receber notificações quando alguém comentar em suas postagens.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={configuracoes.notificacaoComentario}
+                    onCheckedChange={(checked) => handleConfigChange('notificacaoComentario', checked)}
+                  />
+                </div>
+                <div className="flex items-center justify-between overflow-y-auto">
+                  <div className="overflow-y-auto">
+                    <h5 className="font-medium text-foreground">Atualização do Site</h5>
+                    <p className="text-sm text-muted-foreground">
+                      Receber notificações sobre novas funcionalidades e atualizações importantes do site.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={configuracoes.notificacaoAtualizacaoSite}
+                    onCheckedChange={(checked) => handleConfigChange('notificacaoAtualizacaoSite', checked)}
+                  />
+                </div>
+                <div className="flex items-center justify-between overflow-y-auto">
+                  <div className="overflow-y-auto">
+                    <h5 className="font-medium text-foreground">Aprovação Pública do Órgão</h5>
+                    <p className="text-sm text-muted-foreground">
+                      Receber notificações sobre a aprovação pública de eventos ou postagens pelo órgão responsável.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={configuracoes.notificacaoAprovacaoPublica}
+                    onCheckedChange={(checked) => handleConfigChange('notificacaoAprovacaoPublica', checked)}
+                  />
+                </div>
+                <div className="flex justify-end pt-4 overflow-y-auto">
+                  <Button onClick={handleSalvar} disabled={isLoading}>
+                    {isLoading ? 'Salvando...' : 'Salvar Notificações'}
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
 
           {activeSection === 'sair' && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Funcionalidade de logout em desenvolvimento.</p>
+            <div className="space-y-8 overflow-y-auto">
+              <div className="overflow-y-auto">
+                <h3 className="text-2xl font-bold text-foreground">Sair da Conta</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Ao sair, você precisará fazer login novamente para acessar sua conta.
+                </p>
+              </div>
+
+              <div className="space-y-6 rounded-lg border border-border p-6 overflow-y-auto">
+                <p className="text-lg text-muted-foreground overflow-y-auto">
+                  Tem certeza de que deseja sair?
+                </p>
+                <Button 
+                  variant="destructive" 
+                  className="w-full md:w-auto"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sair
+                </Button>
+              </div>
             </div>
           )}
         </div>

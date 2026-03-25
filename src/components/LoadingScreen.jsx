@@ -7,10 +7,10 @@ const LoadingScreen = ({ isVisible = true, message = 'Carregando' }) => {
         {/* Círculo duplo futurista */}
         <div className="relative w-20 h-20">
           {/* Círculo externo gradiente girando */}
-          <div className="absolute inset-0 rounded-full border-4 border-t-gradient animate-spin-slow" style={{ borderColor: 'transparent transparent #3b82f6 #3b82f6' }} />
+          <div className="absolute inset-0 rounded-full border-4 border-t-gradient animate-spin-slow" style={{ borderColor: 'transparent transparent #4b5563 #4b5563' }} />
           
           {/* Círculo interno menor girando inverso */}
-          <div className="absolute inset-2 rounded-full border-4 border-t-gradient animate-spin-slow-reverse" style={{ borderColor: 'transparent #06b6d4 #06b6d4 transparent' }} />
+          <div className="absolute inset-2 rounded-full border-4 border-t-gradient animate-spin-slow-reverse" style={{ borderColor: 'transparent #000000 #000000 transparent' }} />
         </div>
 
         {/* Mensagem */}

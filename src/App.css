@@ -118,3 +118,45 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* 
+ * Personalização da Barra de Rolagem (Scrollbar)
+ * Garante que a barra de rolagem seja sempre visível e estilizada.
+ */
+
+/* Força a barra de rolagem a ser sempre visível (para navegadores WebKit) */
+body {
+  overflow-y: scroll !important;
+}
+
+/* Estilo para navegadores WebKit (Chrome, Safari) */
+::-webkit-scrollbar {
+  width: 10px; /* Largura da barra de rolagem */
+  height: 10px; /* Altura da barra de rolagem horizontal */
+}
+
+/* Fundo da barra de rolagem */
+::-webkit-scrollbar-track {
+  background: var(--color-background); /* Cor de fundo do site */
+  border-radius: 10px;
+}
+
+/* Estilo do "polegar" (o elemento que você arrasta) */
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary); /* Cor primária do tema */
+  border-radius: 10px;
+  border: 2px solid var(--color-background); /* Borda para dar um efeito de "flutuação" */
+}
+
+/* Estilo do "polegar" ao passar o mouse */
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-foreground); /* Cor mais escura ao passar o mouse */
+}
+
+/* Estilo para navegadores Firefox (usando o tema do sistema) */
+/* Não é possível personalizar tanto quanto no WebKit, mas garante a visibilidade */
+/* O Firefox usa o tema do sistema, mas a propriedade abaixo pode ajudar a forçar a visibilidade */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary) var(--color-background);
+}
