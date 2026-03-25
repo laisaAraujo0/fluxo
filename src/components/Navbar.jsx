@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { MapPin, Menu, User, LayoutDashboard, LogOut, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import GlobalSearch from './GlobalSearch';
 import CEPInput from './CEPInput';
