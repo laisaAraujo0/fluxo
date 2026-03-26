@@ -222,42 +222,45 @@ const EventosPage = () => {
       </div>
 
       {/* Estatísticas */}
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-  <div className="bg-card p-4 rounded-xl border shadow text-center w-full">
-    <div className="text-xl font-bold text-primary">{eventos.length}</div>
-    <div className="text-sm text-muted-foreground mt-1">Total de Eventos</div>
-  </div>
+      {/*<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-card p-4 rounded-xl border shadow text-center w-full">
+          <div className="text-xl font-bold text-primary">{eventos.length}</div>
+          <div className="text-sm text-muted-foreground mt-1">Total de Eventos</div>
+        </div>
 
-  <div className="bg-card p-4 rounded-xl border shadow text-center w-full">
-    <div className="text-xl font-bold text-green-600">
-      {eventos.filter(e => e.status === 'ativo').length}
-    </div>
-    <div className="text-sm text-muted-foreground mt-1">Eventos Ativos</div>
-  </div>
+        <div className="bg-card p-4 rounded-xl border shadow text-center w-full">
+          <div className="text-xl font-bold text-green-600">
+            {eventos.filter(e => e.status === 'ativo').length}
+          </div>
+          <div className="text-sm text-muted-foreground mt-1">Eventos Ativos</div>
+        </div>
 
-  <div className="bg-card p-4 rounded-xl border shadow text-center w-full">
-    <div className="text-xl font-bold text-yellow-600">
-      {eventos.filter(e => e.status === 'pendente').length}
-    </div>
-    <div className="text-sm text-muted-foreground mt-1">Pendentes</div>
-  </div>
-</div>
+        <div className="bg-card p-4 rounded-xl border shadow text-center w-full">
+          <div className="text-xl font-bold text-yellow-600">
+            {eventos.filter(e => e.status === 'pendente').length}
+          </div>
+          <div className="text-sm text-muted-foreground mt-1">Pendentes</div>
+        </div>
+      </div> */}
 
 
       {/* Barra de Pesquisa + Ordenação + Filtros */}
-      <div className="flex flex-wrap items-center gap-3 mb-4 mt-6">
-        <div className="flex-1 min-w-240px relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Pesquisar eventos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
-        </div>
+      <div className="mb-4 mt-6 space-y-3">
 
+      <div className="relative w-full">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Pesquisar eventos..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-9 w-full"
+        />
+      </div>
+
+      <div className="flex items-center gap-2">
+        
         <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-[150px]">
+          <SelectTrigger className="flex-1">
             <SelectValue placeholder="Mais recentes" />
           </SelectTrigger>
           <SelectContent>
@@ -270,11 +273,14 @@ const EventosPage = () => {
 
         <Button
           onClick={() => setIsFiltersVisible(!isFiltersVisible)}
-          className="flex items-center gap-2 bg-white text-black dark:bg-gray-900 hover:bg-gray-300 rounded-lg shadow-sm border"
+          variant="outline"
+          className="flex items-center gap-2"
         >
-          <Filter className="h-4 w-4" /> Filtros
+          <Filter className="h-4 w-4" />
+          Filtros
         </Button>
       </div>
+    </div>
 
       {/* Painel de Filtros */}
       {isFiltersVisible && (
