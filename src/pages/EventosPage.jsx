@@ -8,6 +8,8 @@ import RegistroEvento from '@/components/RegistroEvento';
 import EventCard from '@/components/EventCard';
 import { useUser } from '@/contexts/UserContext';
 import eventService from '@/services/eventService';
+import apiEventService from '@/services/apiEventService';
+import categoryService from '@/services/categoryService';
 import { subscribeToBroadcast, unsubscribeFromBroadcast } from '@/services/socketService';
 import { toast } from 'sonner';
 
@@ -48,27 +50,49 @@ const EventosPage = () => {
     };
   }, []);
 
-  const loadEvents = () => {
+  const loadEvents = async () => {
     setIsLoading(true);
     try {
-      const allEvents = eventService.getAllEvents();
-      setEventos(allEvents);
+      const allEvents = await apiEventService.getAllEvents();
+      console.log('📋 EventosPage: Eventos carregados:', allEvents);
+      
+      // O backend pode retornar um array direto ou um objeto com paginação { eventos: [...] }
+      const eventsArray = Array.isArray(allEvents) 
+        ? allEvents 
+        : (allEvents && Array.isArray(allEvents.eventos) ? allEvents.eventos : []);
+        
+      setEventos(eventsArray);
     } catch (error) {
-      console.error('Erro ao carregar eventos:', error);
+      console.error('❌ EventosPage: Erro ao carregar eventos:', error);
       toast.error('Erro ao carregar eventos');
+      setEventos([]); // Garantir array vazio em caso de erro
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleNewEventBroadcast = (novoEvento) => {
-    setEventos((prev) => [novoEvento, ...prev]);
-    toast.info(`Novo Evento Criado: ${novoEvento.title}`);
+  const handleNewEventBroadcast = async (novoEvento) => {
+    // Verificar se o evento já existe na lista para evitar duplicatas (e evitar o popup duplo do toast e contador)
+    setEventos((prevEventos) => {
+      const exists = prevEventos.some(e => e.id === novoEvento.id);
+      if (exists) return prevEventos;
+      
+      // Se não existir, avisa e chama o recarregamento assíncrono para atualizar tudo certinho
+      toast.info(`Novo Evento Criado: ${novoEvento.title}`);
+      loadEvents(); // Dispara o recarregamento sem travar
+      return [novoEvento, ...prevEventos]; // Adiciona temporariamente pra ficar rápido
+    });
   };
 
-  const handleUpdatedEventBroadcast = (updatedEvent) => {
+  const handleUpdatedEventBroadcast = (data) => {
+    // Às vezes o Socket manda o evento direto, às vezes manda dentro de { evento: {...} }
+    const updatedEvent = data.evento ? data.evento : data;
+    
+    if (!updatedEvent || !updatedEvent.id) return;
+    
     setEventos((prev) => prev.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)));
-    toast.info(`Evento Atualizado: ${updatedEvent.title}`);
+    // Removi o toast.info de "Evento Atualizado" aqui para não ficar pipocando na tela 
+    // toda vez que alguém comenta (já que o próprio comentário já tem um toast de sucesso).
   };
 
   const handleDeletedEventBroadcast = ({ id }) => {
@@ -78,20 +102,25 @@ const EventosPage = () => {
 
   // ======== FILTRAGEM E ORDENAÇÃO ========
   const filteredAndSortedEvents = useMemo(() => {
-    let filtered = eventos.filter((evento) => {
+    // Garantir que eventos é um array válido
+    const eventosArray = Array.isArray(eventos) ? eventos : [];
+    console.log('🔍 EventosPage: Filtrando eventos, total:', eventosArray.length);
+    
+    let filtered = eventosArray.filter((evento) => {
       const matchesSearch =
-        evento.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        evento.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        evento.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+        (evento.titulo?.toLowerCase() || evento.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (evento.descricao?.toLowerCase() || evento.description?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (evento.tags || []).some((tag) => (tag?.toLowerCase() || '').includes(searchTerm.toLowerCase()));
 
       const matchesCategory =
         !activeFilters.categoria ||
         activeFilters.categoria === 'todos' ||
-        evento.categoria === activeFilters.categoria;
+        evento.categoria === activeFilters.categoria || 
+        evento.category === activeFilters.categoria;
 
       const matchesLocation =
         !activeFilters.cidade ||
-        evento.endereco.toLowerCase().includes(activeFilters.cidade.toLowerCase());
+        (evento.endereco?.toLowerCase() || evento.location?.toLowerCase() || '').includes(activeFilters.cidade.toLowerCase());
 
       const matchesStatus =
         !activeFilters.status ||
@@ -100,10 +129,10 @@ const EventosPage = () => {
 
       const matchesDateStart =
         !activeFilters.dataInicio ||
-        new Date(evento.dataInicio) >= new Date(activeFilters.dataInicio);
+        new Date(evento.dataInicio || evento.createdAt) >= new Date(activeFilters.dataInicio);
 
       const matchesDateEnd =
-        !activeFilters.dataFim || new Date(evento.dataInicio) <= new Date(activeFilters.dataFim);
+        !activeFilters.dataFim || new Date(evento.dataInicio || evento.createdAt) <= new Date(activeFilters.dataFim);
 
       return (
         matchesSearch &&
@@ -120,11 +149,11 @@ const EventosPage = () => {
         case 'data':
           return new Date(b.createdAt) - new Date(a.createdAt);
         case 'titulo':
-          return a.titulo.localeCompare(b.titulo);
+          return (a.titulo || a.title || '').localeCompare(b.titulo || b.title || '');
         case 'popularidade':
-          return (b.curtidas?.length || 0) - (a.curtidas?.length || 0);
+          return ((b.likes?.length || b.curtidas?.length || 0) - (a.likes?.length || a.curtidas?.length || 0));
         case 'comentarios':
-          return (b.comentarios?.length || 0) - (a.comentarios?.length || 0);
+          return ((b.comments?.length || b.comentarios?.length || 0) - (a.comments?.length || a.comentarios?.length || 0));
         default:
           return 0;
       }
@@ -170,7 +199,7 @@ const EventosPage = () => {
     setCurrentView('detalhes');
   };
 
-  const handleEventoAdicionado = (novoEvento) => {
+  const handleEventoAdicionado = async (novoEvento) => {
     if (eventoParaEditar) {
       setEventos((prev) => prev.map((e) => (e.id === novoEvento.id ? novoEvento : e)));
       setEventoParaEditar(null);
@@ -178,8 +207,33 @@ const EventosPage = () => {
       handleVoltarLista();
       return;
     }
-    setEventos((prev) => [novoEvento, ...prev]);
-    toast.success('Evento adicionado com sucesso!');
+    
+    // Atualizar lista completa para garantir a contagem e ordem corretas
+    try {
+      await loadEvents();
+      handleVoltarLista();
+    } catch (error) {
+      // Fallback em caso de erro na atualização
+      setEventos((prev) => [novoEvento, ...prev]);
+      toast.success('Evento adicionado com sucesso!');
+      handleVoltarLista();
+    }
+  };
+
+  const handleEditarEvento = (evento) => {
+    setEventoParaEditar(evento);
+    setCurrentView('registro');
+  };
+
+  const handleDeletarEvento = async (eventoId) => {
+    try {
+      await apiEventService.deleteEvent(eventoId);
+      setEventos((prev) => prev.filter((e) => e.id !== eventoId));
+      toast.success('Evento deletado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao deletar evento:', error);
+      toast.error('Erro ao deletar evento');
+    }
   };
 
   // ======== RENDERIZAÇÃO DAS TELAS ========
@@ -188,9 +242,12 @@ const EventosPage = () => {
       <DetalheEvento
         evento={eventoSelecionado}
         onVoltar={handleVoltarLista}
-        onEventoUpdate={(e) =>
-          setEventos((prev) => prev.map((ev) => (ev.id === e.id ? e : ev)))
-        }
+        onEventoUpdate={(e) => {
+          const updatedEvent = e && e.evento ? e.evento : e;
+          if (updatedEvent && updatedEvent.id) {
+            setEventos((prev) => prev.map((ev) => (ev.id === updatedEvent.id ? updatedEvent : ev)));
+          }
+        }}
       />
     );
   }
@@ -292,10 +349,9 @@ const EventosPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todas</SelectItem>
-                  <SelectItem value="Cultura">Cultura</SelectItem>
-                  <SelectItem value="Educação">Educação</SelectItem>
-                  <SelectItem value="Esportes">Esportes</SelectItem>
-                  <SelectItem value="Saúde">Saúde</SelectItem>
+                  {categoryService.getCategoryOptions().map(cat => (
+                    <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -398,16 +454,26 @@ const EventosPage = () => {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paginatedEvents.map((evento) => (
-                <EventCard
-                  key={evento.id}
-                  evento={evento}
-                  onEventoClick={() => handleVerDetalhes(evento)}
-                  onEventoUpdate={(e) =>
-                    setEventos((prev) => prev.map((ev) => (ev.id === e.id ? e : ev)))
-                  }
-                />
-              ))}
+              {paginatedEvents
+                .filter(evento => evento && evento.id) // Filtrar apenas eventos válidos
+                .map((evento) => (
+                  <EventCard
+                    key={evento.id}
+                    evento={evento}
+                    onEventoClick={() => handleVerDetalhes(evento)}
+                    onEventoUpdate={(e) => {
+                      // Extrair o evento real se ele vier aninhado
+                      const updatedEvent = e && e.evento ? e.evento : e;
+                      
+                      // Verificar se é um objeto válido com ID e se a tela principal precisa saber
+                      if (updatedEvent && updatedEvent.id) {
+                        setEventos((prev) => prev.map((ev) => (ev.id === updatedEvent.id ? updatedEvent : ev)));
+                      }
+                    }}
+                    onEdit={handleEditarEvento}
+                    onDelete={handleDeletarEvento}
+                  />
+                ))}
             </div>
 
             {totalPages > 1 && (

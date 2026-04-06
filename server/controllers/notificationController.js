@@ -5,7 +5,8 @@ import { getUnreadNotifications, markAsRead, markAllAsRead } from '../services/n
  */
 export const listarNotificacoes = async (req, res) => {
   try {
-    const userId = req.usuario?.id;
+    // O seu token JWT às vezes salva o ID como "userId" e às vezes como "id"
+    const userId = req.usuario?.id || req.usuario?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'Usuário não autenticado' });
@@ -25,7 +26,7 @@ export const listarNotificacoes = async (req, res) => {
 export const marcarComoLida = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.usuario?.id;
+    const userId = req.usuario?.id || req.usuario?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'Usuário não autenticado' });
@@ -48,7 +49,7 @@ export const marcarComoLida = async (req, res) => {
  */
 export const marcarTodasComoLidas = async (req, res) => {
   try {
-    const userId = req.usuario?.id;
+    const userId = req.usuario?.id || req.usuario?.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'Usuário não autenticado' });

@@ -132,6 +132,7 @@ const ReclamacoesPage = () => {
   const problemasResolvidos = reclamacoes.filter(r => r.status === "RESOLVIDO").length;
   const problemasPendentes = reclamacoes.filter(r => r.status === "PENDENTE").length;
 
+  // Removido o render do form
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
@@ -207,10 +208,10 @@ const ReclamacoesPage = () => {
             >
               Lista de Reclamações
             </h3>
-            {/* <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2" onClick={() => toast.info('Funcionalidade de Nova Reclamação será implementada em breve!')}>
               <Plus className="h-4 w-4" />
-              Reportar Reclamação
-            </Button> */}
+              Nova Reclamação
+            </Button>
           </div>
 
           <div className="overflow-x-auto rounded-xl border border-border bg-card">

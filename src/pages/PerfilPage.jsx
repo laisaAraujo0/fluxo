@@ -40,11 +40,14 @@ const PerfilPage = () => {
 
   // Carregar dados do perfil do servidor ao montar o componente
   useEffect(() => {
-    if (isAuthenticated() && user) {
+    // Para evitar loop infinito, dependemos apenas do ID do usuário.
+    // Assim, ao usar o 'updateUser', a página não recarrega infinitamente.
+    if (isAuthenticated() && user && user.id) {
       loadUserProfile();
       loadUserData();
     }
-  }, [user, isAuthenticated]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   // Função para carregar perfil completo do servidor
   const loadUserProfile = async () => {
@@ -106,16 +109,38 @@ const PerfilPage = () => {
     }
   };
 
-  const loadUserData = () => {
-    const stats = userActivityService.getUserStats(user.id);
-    const events = userActivityService.getUserEvents(user.id);
-    const likedEvents = userActivityService.getUserLikedEvents(user.id);
-    const comments = userActivityService.getUserComments(user.id);
+  const loadUserData = async () => {
+    try {
+      // Busca estatísticas reais do banco (usando a UDF get_user_activity_report)
+      const stats = await userProfileService.getUserStats();
+      
+      console.log('📊 Estatísticas recebidas do banco:', stats); // Log para debug
 
-    setUserStats(stats);
-    setUserEvents(events);
-    setUserLikedEvents(likedEvents);
-    setUserComments(comments);
+      if (stats && !stats.error) {
+        setUserStats({
+          eventosCreated: parseInt(stats.total_eventos || 0),
+          comentariosFeitos: parseInt(stats.total_comentarios || 0),
+          eventosLiked: parseInt(stats.total_curtidas || 0), // O nome correto na sua Function é total_curtidas
+          curtidasRecebidas: 0, // Sua function atual não calcula curtidas recebidas nos seus eventos
+          eventosRecentes: parseInt(stats.eventos_recentes || 0),
+          comentariosRecentes: parseInt(stats.comentarios_recentes || 0),
+          curtidasRecentes: parseInt(stats.curtidas_recentes || 0)
+        });
+      }
+
+      // Busca os cards (temporário: ainda usando o service antigo, podemos refatorar isso depois)
+      if (user && user.id) {
+        const events = userActivityService.getUserEvents(user.id);
+        const likedEvents = userActivityService.getUserLikedEvents(user.id);
+        const comments = userActivityService.getUserComments(user.id);
+
+        setUserEvents(events);
+        setUserLikedEvents(likedEvents);
+        setUserComments(comments);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados do usuário", error);
+    }
   };
 
   const handleEventoUpdate = (updatedEvent) => {
@@ -222,7 +247,20 @@ const PerfilPage = () => {
           </Card>
         </div>
 
-        <div className="flex items-center gap-4">
+        {/* Atividade Recente (Últimos 30 dias) puxada da Function */}
+        <div className="flex flex-wrap justify-center gap-3 mt-2 w-full max-w-2xl">
+          <Badge variant="outline" className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/20 px-3 py-1">
+            🔥 {userStats.eventosRecentes || 0} Eventos recentes (30d)
+          </Badge>
+          <Badge variant="outline" className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20 px-3 py-1">
+            💬 {userStats.comentariosRecentes || 0} Comentários recentes (30d)
+          </Badge>
+          <Badge variant="outline" className="bg-red-500/10 text-red-600 hover:bg-red-500/20 border-red-500/20 px-3 py-1">
+            ❤️ {userStats.curtidasRecentes || 0} Curtidas recentes (30d)
+          </Badge>
+        </div>
+
+        <div className="flex items-center gap-4 mt-2">
           <Button
             className="flex items-center gap-2 min-w-[120px]"
             onClick={() => {

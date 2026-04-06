@@ -5,6 +5,7 @@ import FormField, { validators } from '@/components/FormField';
 import { useUser } from '@/contexts/UserContext';
 import { toast } from 'sonner';
 import { useCEP } from '@/lib/cep'; // ✅ Importa hook de CEP
+import userService from '@/services/userService'; // ✅ Importa serviço de usuário
 
 const CadastroPage = () => {
   const navigate = useNavigate();
@@ -49,7 +50,7 @@ const CadastroPage = () => {
 
   // ✅ Envio do formulário
   // ✅ Envio do formulário com validação
-const handleSubmit = (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
 
   // --- 🔍 Validação de email ---
@@ -83,30 +84,51 @@ const handleSubmit = (e) => {
     return;
   }
 
-  // --- 🧠 Criação do usuário ---
-  const novoUsuario = {
-  id: Date.now(),
-  nome: formData.nome,
-  email: formData.email,
-  senha: formData.senha, // ✅ Adiciona senha!
-  telefone: formData.telefone,
-  cidade: formData.cidade,
-  estado: formData.estado,
-  cep: formData.cep,
-  avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.nome)}&background=random`,
-  tipo: 'usuario',
-  isAdmin: false,
-  dataCriacao: new Date().toISOString(),
-  ativo: true
-};
+  try {
+    // --- 🧠 Criação do usuário via API ---
+    const userData = {
+      nome: formData.nome,
+      email: formData.email,
+      senha: formData.senha,
+      telefone: formData.telefone,
+      cidade: formData.cidade,
+      estado: formData.estado,
+      cep: formData.cep,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.nome)}&background=random`
+    };
 
+    console.log('📤 Enviando dados para registro:', userData);
 
-  // --- 💾 Salvar no localStorage e autenticar ---
-  localStorage.setItem('usuario', JSON.stringify(novoUsuario));
-  login(novoUsuario);
+    // Registrar usuário no banco de dados
+    const response = await userService.register(userData);
+    
+    console.log('✅ Resposta do servidor:', response);
+    
+    // Salvar usuário e token no localStorage
+    const usuario = response.usuario;
+    const usuarioComToken = {
+      ...usuario,
+      token: response.token,
+      tipo: 'usuario',
+      isAdmin: false,
+      dataCriacao: usuario.createdAt || new Date().toISOString(),
+      ativo: true
+    };
 
-  toast.success('Cadastro realizado com sucesso!');
-  navigate('/');
+    console.log('💾 Salvando usuário no localStorage:', usuarioComToken);
+
+    localStorage.setItem('usuario', JSON.stringify(usuarioComToken));
+    localStorage.setItem('user', JSON.stringify(usuarioComToken)); // Compatibilidade com outros componentes
+    login(usuarioComToken);
+
+    console.log('🔄 Redirecionando para página inicial...');
+    toast.success('Cadastro realizado com sucesso!');
+    navigate('/');
+  } catch (error) {
+    console.error('❌ Erro ao cadastrar usuário:', error);
+    console.error('📄 Detalhes do erro:', error.message, error.stack);
+    toast.error(error.message || 'Erro ao realizar cadastro. Tente novamente.');
+  }
 };
 
   return (

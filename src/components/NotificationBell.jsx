@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { api } from '@/services/api';
+import api from '@/services/apiClient';
 import { useUser } from '@/contexts/UserContext';
 
 const NotificationBell = () => {
@@ -22,7 +22,7 @@ const NotificationBell = () => {
   const fetchNotifications = async () => {
     if (!isAuthenticated()) return;
     try {
-      const response = await api.get('/api/notifications');
+      const response = await api.get('/notifications');
       setNotifications(response.data);
       setUnreadCount(response.data.length);
     } catch (error) {
@@ -32,7 +32,7 @@ const NotificationBell = () => {
 
   const markAsRead = async (id) => {
     try {
-      await api.put(`/api/notifications/${id}/read`);
+      await api.put(`/notifications/${id}/read`);
       setNotifications(prev => prev.filter(n => n.id !== id));
       setUnreadCount(prev => prev - 1);
     } catch (error) {
@@ -42,7 +42,7 @@ const NotificationBell = () => {
 
   const markAllAsRead = async () => {
     try {
-      await api.put('/api/notifications/read-all');
+      await api.put('/notifications/read-all');
       setNotifications([]);
       setUnreadCount(0);
     } catch (error) {

@@ -34,7 +34,8 @@ export const rateLimitMiddleware = (maxRequests = 100, windowMs = 60000) => {
 };
 
 // Rate limiting específico para login (mais restritivo)
-export const loginRateLimitMiddleware = rateLimitMiddleware(5, 15 * 60 * 1000); // 5 tentativas a cada 15 minutos
+// MUDANÇA: Aumentado para 50 tentativas a cada 15 minutos para evitar bloqueio durante desenvolvimento
+export const loginRateLimitMiddleware = rateLimitMiddleware(50, 15 * 60 * 1000); 
 
 // Rate limiting específico para criação de eventos (moderado)
 export const eventCreationRateLimitMiddleware = rateLimitMiddleware(30, 60 * 60 * 1000); // 30 eventos por hora

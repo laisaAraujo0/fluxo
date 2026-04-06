@@ -12,6 +12,7 @@ model User {
   email                  String         @unique
   name                   String
   username               String         @unique
+  password               String?
   avatar                 String?
   bio                    String?
   cidade                 String?
@@ -41,15 +42,16 @@ model Event {
   title       String
   description String
   location    String
-  imageUrl    String?
   category    EventCategory
+  imageUrl    String?
   status      EventStatus   @default(PENDING)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   authorId    String
-  comments    Comment[]
   author      User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments    Comment[]
   likes       Like[]
+  commentsCount Int         @default(0)
 
   @@map("events")
 }
@@ -151,6 +153,14 @@ enum EventCategory {
   HEALTH
   EDUCATION
   OTHER
+  CULTURE
+  SPORT
+  TECHNOLOGY
+  GASTRONOMY
+  MUSIC
+  ART
+  URBAN_MOBILITY
+  COMMUNITY_EVENT
 }
 
 enum ComplaintStatus {

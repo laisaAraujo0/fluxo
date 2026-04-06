@@ -524,13 +524,13 @@ const MapasPage = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="">Todas as categorias</SelectItem>
-                            <SelectItem value="infraestrutura">Infraestrutura</SelectItem>
-                            <SelectItem value="seguranca">Segurança</SelectItem>
-                            <SelectItem value="meio-ambiente">Meio Ambiente</SelectItem>
-                            <SelectItem value="limpeza">Limpeza</SelectItem>
-                            <SelectItem value="saneamento">Saneamento</SelectItem>
-                            <SelectItem value="mobilidade">Mobilidade</SelectItem>
-                            <SelectItem value="outros">Outros</SelectItem>
+                            <SelectItem value="INFRASTRUCTURE">Infraestrutura</SelectItem>
+                            <SelectItem value="SECURITY">Segurança</SelectItem>
+                            <SelectItem value="ENVIRONMENT">Meio Ambiente</SelectItem>
+                            <SelectItem value="CULTURE">Cultura</SelectItem>
+                            <SelectItem value="SPORT">Esporte</SelectItem>
+                            <SelectItem value="URBAN_MOBILITY">Mobilidade</SelectItem>
+                            <SelectItem value="OTHER">Outros</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

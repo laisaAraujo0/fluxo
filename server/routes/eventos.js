@@ -7,6 +7,7 @@ import {
   deletarEvento,
   votarEvento,
   adicionarComentario,
+  removerComentario,
   obterEstatisticas,
 } from '../controllers/eventosController.js';
 import { verificarToken, autenticacaoOpcional } from '../middleware/auth.js';
@@ -30,7 +31,7 @@ router.post('/', verificarToken, eventCreationRateLimitMiddleware, criarEvento);
 // Atualizar um evento existente (rota protegida)
 router.put('/:id', verificarToken, atualizarEvento);
 
-// Deletar evento (rota protegida)
+// Deletar evento (somente autor)
 router.delete('/:id', verificarToken, deletarEvento);
 
 // Curtir / votar em um evento (rota protegida)
@@ -38,6 +39,9 @@ router.post('/:id/votar', verificarToken, votarEvento);
 
 // Adicionar comentário a um evento (rota protegida)
 router.post('/:id/comentarios', verificarToken, adicionarComentario);
+
+// Remover comentário de um evento (rota protegida)
+router.delete('/:id/comentarios/:commentId', verificarToken, removerComentario);
 
 export default router;
 

@@ -35,6 +35,25 @@ class UserProfileService {
     }
   }
 
+  // Obter estatísticas do usuário (usando a UDF do banco)
+  async getUserStats() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/usuarios/estatisticas`, {
+        method: 'GET',
+        headers: this.getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao obter estatísticas do usuário');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Erro ao obter estatísticas:', error);
+      return {};
+    }
+  }
+
   // Atualizar perfil do usuário
   async updateUserProfile(profileData) {
     try {

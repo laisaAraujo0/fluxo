@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Pencil, Trash2, Heart, MessageCircle, MapPin, Calendar, Clock, DollarSign, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { useUser } from '@/contexts/UserContext';
-import eventService from '@/services/eventService';
+import apiEventService from '@/services/apiEventService';
 import { toast } from 'sonner';
 
 const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) => {
@@ -16,19 +16,46 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [localEvento, setLocalEvento] = useState(evento || {});
 
-  const isLiked = evento.curtidas?.some(like => like.userId === user?.id);
-  const isAuthor = user && evento.autorId === user.id;
-  const likesCount = evento.curtidas?.length || 0;
-  const commentsCount = evento.comentarios?.length || 0;
+  // Sincroniza o estado local quando a prop evento muda
+  useEffect(() => {
+    if (evento) {
+      setLocalEvento(evento);
+    }
+  }, [evento]);
 
-  const handleLike = () => {
+  // Se não tem evento válido ainda, retorna nulo para não quebrar a tela
+  if (!localEvento || !localEvento.id) {
+    return null;
+  }
+
+  const isLiked = localEvento?.likes?.some(like => like.userId === user?.id) || localEvento?.curtidas?.some(like => like.userId === user?.id);
+  const isAuthor = user && (localEvento?.autorId || localEvento?.authorId) === user.id;
+  const likesCount = localEvento?.likes?.length || localEvento?.curtidas?.length || 0;
+  // Usando primeiramente o contador otimizado da Trigger (commentsCount), com fallback para o .length se necessário
+  const commentsCount = localEvento?.commentsCount ?? (localEvento?.comments?.length || localEvento?.comentarios?.length || 0);
+
+  const handleLike = async () => {
     if (!isAuthenticated()) {
       toast.error('Você precisa estar logado para curtir eventos');
       return;
     }
-    const updatedEvent = eventService.toggleLike(evento.id, user.id);
-    if (updatedEvent && onEventoUpdate) onEventoUpdate(updatedEvent);
+    try {
+      const response = await apiEventService.toggleLike(localEvento.id);
+      
+      // Extrair o evento atualizado da resposta
+      const updatedEvent = response?.evento || response;
+      
+      if (updatedEvent && updatedEvent.id) {
+        setLocalEvento(updatedEvent);
+        if (onEventoUpdate) {
+          onEventoUpdate(updatedEvent);
+        }
+      }
+    } catch (error) {
+      toast.error('Erro ao curtir evento');
+    }
   };
 
   const handleCommentSubmit = async (e) => {
@@ -38,33 +65,44 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
 
     setIsSubmittingComment(true);
     try {
-      const comment = eventService.addComment(
-        evento.id,
-        user.id,
-        user.nome || user.name || 'Usuário',
-        newComment.trim()
-      );
-      if (comment) {
+      const response = await apiEventService.addComment(localEvento.id, newComment.trim());
+      
+      // A sua API retorna { message: '...', comentario: { ... } }
+      if (response && response.comentario) {
         setNewComment('');
         toast.success('Comentário adicionado!');
-        const updatedEvent = eventService.getEventById(evento.id);
-        if (updatedEvent && onEventoUpdate) onEventoUpdate(updatedEvent);
+        
+        // Atualiza a lista de comentários localmente sem precisar recarregar tudo do banco
+        const listaAtual = localEvento.comments || localEvento.comentarios || [];
+        const eventoAtualizado = {
+          ...localEvento,
+          comments: [...listaAtual, response.comentario],
+          commentsCount: (localEvento.commentsCount || listaAtual.length) + 1
+        };
+
+        setLocalEvento(eventoAtualizado);
+        if (onEventoUpdate) {
+          onEventoUpdate(eventoAtualizado);
+        }
       }
-    } catch {
+    } catch (error) {
       toast.error('Erro ao adicionar comentário');
     } finally {
       setIsSubmittingComment(false);
     }
   };
 
-  const handleDeleteComment = (commentId) => {
+  const handleDeleteComment = async (commentId) => {
     if (!isAuthenticated()) return;
-    const success = eventService.removeComment(evento.id, commentId, user.id);
-    if (success) {
-      toast.success('Comentário removido');
-      const updatedEvent = eventService.getEventById(evento.id);
-      if (updatedEvent && onEventoUpdate) onEventoUpdate(updatedEvent);
-    } else {
+    try {
+      await apiEventService.deleteComment(localEvento.id, commentId);
+      const updatedEvent = await apiEventService.getEventById(localEvento.id);
+      if (updatedEvent && onEventoUpdate) {
+        onEventoUpdate(updatedEvent);
+        setLocalEvento(updatedEvent);
+        toast.success('Comentário removido!');
+      }
+    } catch (error) {
       toast.error('Erro ao remover comentário');
     }
   };
@@ -85,6 +123,11 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : '';
   const formatDateTime = (d) => d ? new Date(d).toLocaleString('pt-BR') : '';
 
+  // Determina o nome do autor do evento de forma segura (mock ou banco real)
+  const eventAuthorName = localEvento?.autorNome || localEvento?.author?.name || 'Usuário Anônimo';
+  const eventAuthorAvatar = localEvento?.autorAvatar || localEvento?.author?.avatar;
+  const initialChar = eventAuthorName ? eventAuthorName.charAt(0).toUpperCase() : 'U';
+
   return (
     <Card className="flex flex-col h-full group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-border">
       <CardHeader className="space-y-4 shrink-0">
@@ -92,28 +135,28 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={evento.autorAvatar} />
-              <AvatarFallback>{(evento.autorNome || 'U').charAt(0).toUpperCase()}</AvatarFallback>
+              <AvatarImage src={eventAuthorAvatar} />
+              <AvatarFallback>{initialChar}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="text-sm font-medium text-foreground">{evento.autorNome || 'Usuário Anônimo'}</p>
-              <p className="text-xs text-muted-foreground">{formatDateTime(evento.createdAt)}</p>
+              <p className="text-sm font-medium text-foreground">{eventAuthorName}</p>
+              <p className="text-xs text-muted-foreground">{formatDateTime(localEvento.createdAt)}</p>
             </div>
           </div>
           <div className="flex gap-2 items-center">
-            <Badge className={getStatusColor(evento.status)}>{evento.status}</Badge>
-            {evento.prioridade && (
-              <Badge className={getPriorityColor(evento.prioridade)}>{evento.prioridade}</Badge>
+            <Badge className={getStatusColor(localEvento.status)}>{localEvento.status}</Badge>
+            {localEvento.prioridade && (
+              <Badge className={getPriorityColor(localEvento.prioridade)}>{localEvento.prioridade}</Badge>
             )}
           </div>
         </div>
 
         {/* Imagem */}
-        {evento.imageUrl && (
+        {localEvento.imageUrl && (
           <div className="relative overflow-hidden rounded-lg">
             <img
-              src={evento.imageUrl}
-              alt={evento.titulo}
+              src={localEvento.imageUrl}
+              alt={localEvento.titulo || localEvento.title}
               className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
             />
           </div>
@@ -122,18 +165,18 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
         {/* Título */}
         <div className="space-y-2">
           <h3 className="text-lg font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
-            {evento.titulo}
+            {localEvento.titulo || localEvento.title}
           </h3>
         </div>
 
         {/* Tags */}
-        {evento.tags?.length > 0 && (
+        {localEvento.tags?.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {evento.tags.slice(0, 3).map((tag, i) => (
+            {localEvento.tags.slice(0, 3).map((tag, i) => (
               <Badge key={i} variant="secondary" className="text-xs">{tag}</Badge>
             ))}
-            {evento.tags.length > 3 && (
-              <Badge variant="secondary" className="text-xs">+{evento.tags.length - 3}</Badge>
+            {localEvento.tags.length > 3 && (
+              <Badge variant="secondary" className="text-xs">+{localEvento.tags.length - 3}</Badge>
             )}
           </div>
         )}
@@ -141,31 +184,31 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
 
       <CardContent className="grow space-y-3">
         <div className="grid grid-cols-1 gap-2 text-sm">
-          {evento.endereco && (
+          {localEvento.endereco && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-4 w-4" />
-              <span className="line-clamp-1">{evento.endereco}</span>
+              <span className="line-clamp-1">{localEvento.endereco}</span>
             </div>
           )}
-          {evento.dataInicio && (
+          {localEvento.dataInicio && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4" />
               <span>
-                {formatDate(evento.dataInicio)}
-                {evento.dataFim && evento.dataFim !== evento.dataInicio && ` - ${formatDate(evento.dataFim)}`}
+                {formatDate(localEvento.dataInicio)}
+                {localEvento.dataFim && localEvento.dataFim !== localEvento.dataInicio && ` - ${formatDate(localEvento.dataFim)}`}
               </span>
             </div>
           )}
-          {evento.horario && (
+          {localEvento.horario && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <Clock className="h-4 w-4" />
-              <span>{evento.horario}</span>
+              <span>{localEvento.horario}</span>
             </div>
           )}
-          {evento.preco && (
+          {localEvento.preco && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <DollarSign className="h-4 w-4" />
-              <span>{evento.preco}</span>
+              <span>{localEvento.preco}</span>
             </div>
           )}
         </div>
@@ -249,36 +292,44 @@ const EventCard = ({ evento, onEventoClick, onEventoUpdate, onEdit, onDelete }) 
         {/* Comentários */}
         {showComments && (
           <div className="w-full space-y-3 border-t pt-3">
-            {evento.comentarios?.length > 0 && (
-              <div className="space-y-2 max-h-40 overflow-y-auto">
-                {evento.comentarios.map((comment) => (
-                  <div key={comment.id} className="flex items-start space-x-2 p-2 bg-muted/50 rounded">
-                    <Avatar className="h-6 w-6">
-                      <AvatarFallback className="text-xs">
-                        {(comment.userName || 'U').charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs font-medium text-foreground">{comment.userName}</p>
-                        <div className="flex items-center space-x-1">
-                          <p className="text-xs text-muted-foreground">{formatDateTime(comment.createdAt)}</p>
-                          {comment.userId === user?.id && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteComment(comment.id)}
-                              className="h-auto p-1 text-xs text-red-500 hover:text-red-700"
-                            >
-                              ×
-                            </Button>
-                          )}
+            {(localEvento?.comments?.length > 0 || localEvento?.comentarios?.length > 0) && (
+              <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                {(localEvento.comments || localEvento.comentarios).map((comment) => {
+                  // Pega o nome do autor que vem do banco de dados (author.name) ou fallback para userName/Usuário
+                  const authorName = comment?.author?.name || comment?.userName || 'Usuário';
+                  // Pega o ID do autor para verificar se é o dono do comentário
+                  const authorId = comment?.author?.id || comment?.authorId || comment?.userId;
+                  
+                  return (
+                    <div key={comment.id || Math.random()} className="flex items-start space-x-2 p-2 bg-primary/5 border border-primary/10 rounded group">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                          {authorName ? authorName.charAt(0).toUpperCase() : 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-medium text-foreground">{authorName}</p>
+                          <div className="flex items-center space-x-1">
+                            <p className="text-[10px] text-muted-foreground">{formatDateTime(comment?.createdAt)}</p>
+                            {authorId && user?.id && String(authorId) === String(user.id) && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteComment(comment.id)}
+                                className="h-4 w-4 p-0 text-red-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Excluir comentário"
+                              >
+                                ×
+                              </Button>
+                            )}
+                          </div>
                         </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">{comment?.content}</p>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">{comment.content}</p>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 

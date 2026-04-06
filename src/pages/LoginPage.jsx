@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUser } from '@/contexts/UserContext';
+import userService from '@/services/userService';
 import { toast } from 'sonner';
 
 const LoginPage = () => {
@@ -31,7 +32,7 @@ const LoginPage = () => {
     return regex.test(email);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // 🔍 Validação do e-mail
@@ -46,24 +47,35 @@ const LoginPage = () => {
       return;
     }
 
-    // 🔍 Buscar usuário salvo
-    const usuarioSalvo = JSON.parse(localStorage.getItem('usuario'));
+    try {
+      console.log('🔑 Tentando fazer login com:', formData.email);
+      
+      // Fazer login via API
+      const response = await userService.login(formData.email, formData.senha);
+      console.log('✅ Login bem-sucedido:', response);
+      
+      // Salvar token e dados do usuário
+      const { usuario, token } = response;
+      
+      // Adicionar token ao localStorage para uso futuro
+      localStorage.setItem('token', token);
+      
+      // Preparar dados do usuário para o contexto
+      const usuarioComToken = {
+        ...usuario,
+        token: token
+      };
 
-    if (!usuarioSalvo) {
-      toast.error('Nenhum usuário cadastrado. Faça o cadastro primeiro.');
-      return;
-    }
-
-    // 🔍 Comparar e-mail e senha salvos
-    if (
-      usuarioSalvo.email === formData.email &&
-      usuarioSalvo.senha === formData.senha
-    ) {
-      login(usuarioSalvo);
-      toast.success(`Bem-vindo, ${usuarioSalvo.nome}!`);
-      navigate('/');
-    } else {
-      toast.error('Email ou senha incorretos');
+      // Fazer login no contexto
+      login(usuarioComToken);
+      toast.success(`Bem-vindo, ${usuario.nome || usuario.name}!`);
+      
+      // Redireciona para o perfil
+      navigate('/perfil');
+      
+    } catch (error) {
+      console.error('❌ Erro ao fazer login:', error);
+      toast.error(error.message || 'Email ou senha incorretos');
     }
   };
 

@@ -9,6 +9,7 @@ import { formatarCEP, validarCEP } from '@/lib/cep';
 import { toast } from 'sonner';
 import { useUser } from '@/contexts/UserContext';
 import eventService from '@/services/eventService';
+import apiEventService from '@/services/apiEventService';
 import categoryService from '@/services/categoryService';
 import locationService from '@/services/locationService';
 
@@ -100,6 +101,10 @@ const RegistroEvento = ({ onVoltar, onEventoAdicionado, eventoParaEditar }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    console.log('🎯 Iniciando criação de evento...');
+    console.log('👤 Usuário autenticado:', isAuthenticated());
+    console.log('📋 Dados do formulário:', formData);
+    
     if (!isAuthenticated()) {
       toast.error('Você precisa estar logado para criar um evento');
       return;
@@ -107,6 +112,16 @@ const RegistroEvento = ({ onVoltar, onEventoAdicionado, eventoParaEditar }) => {
 
     if (!formData.titulo || !formData.descricao || !formData.categoria) {
       toast.error('Por favor, preencha todos os campos obrigatórios');
+      return;
+    }
+    
+    if (formData.titulo.length < 5) {
+      toast.error('Título deve ter pelo menos 5 caracteres');
+      return;
+    }
+    
+    if (formData.descricao.length < 20) {
+      toast.error('Descrição deve ter pelo menos 20 caracteres');
       return;
     }
     
@@ -128,21 +143,29 @@ const RegistroEvento = ({ onVoltar, onEventoAdicionado, eventoParaEditar }) => {
         });
       }
 
+      console.log('📸 URL da imagem:', imageUrl);
+      console.log('📍 Coordenadas:', coordenadas);
+
       let eventoAtualizado;
+      const eventData = {
+        ...formData,
+        coordenadas: coordenadas,
+        imageUrl: imageUrl,
+        authorId: user?.id || user?.userId, // Adicionar ID do usuário autenticado
+      };
+      
+      console.log('📦 Dados do evento para API:', eventData);
+      console.log('👤 ID do usuário autenticado:', user?.id, user?.userId);
+
       if (eventoParaEditar) {
-        eventoAtualizado = await eventService.updateEvent(eventoParaEditar.id, {
-          ...formData,
-          coordenadas: coordenadas,
-          imageUrl: imageUrl,
-        }, user.id);
+        console.log('📝 Atualizando evento existente...');
+        eventoAtualizado = await apiEventService.updateEvent(eventoParaEditar.id, eventData);
       } else {
-        eventoAtualizado = await eventService.createEvent({
-          ...formData,
-          coordenadas: coordenadas,
-          imageUrl: imageUrl,
-        }, user);
+        console.log('➕ Criando novo evento...');
+        eventoAtualizado = await apiEventService.createEvent(eventData);
       }
       
+      console.log('✅ Evento criado/atualizado:', eventoAtualizado);
       toast.success(`Evento ${eventoParaEditar ? 'atualizado' : 'criado'} com sucesso!`);
       
       if (onEventoAdicionado) {
@@ -151,7 +174,8 @@ const RegistroEvento = ({ onVoltar, onEventoAdicionado, eventoParaEditar }) => {
       
       onVoltar();
     } catch (error) {
-      console.error('Erro ao processar evento:', error);
+      console.error('❌ Erro ao processar evento:', error);
+      console.error('📄 Detalhes do erro:', error.message, error.stack);
       toast.error('Erro ao processar evento. Tente novamente.');
     } finally {
       setIsSubmitting(false);

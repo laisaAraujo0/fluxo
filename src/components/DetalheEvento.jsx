@@ -15,7 +15,7 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useUser();
   const [currentEvento, setCurrentEvento] = useState(evento);
-  const [newComment, setNewComment] = useState('');
+  const [newComment, setNewComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   useEffect(() => {
@@ -27,9 +27,10 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  const isLiked = currentEvento.curtidas?.some(like => like.userId === user?.id);
-  const likesCount = currentEvento.curtidas?.length || 0;
-  const commentsCount = currentEvento.comentarios?.length || 0;
+  const isLiked = currentEvento?.likes?.some(like => like.userId === user?.id) || currentEvento?.curtidas?.some(like => like.userId === user?.id);
+  const likesCount = currentEvento?.likes?.length || currentEvento?.curtidas?.length || 0;
+  // Usando primeiramente o contador otimizado da Trigger (commentsCount), com fallback para o .length se necessário
+  const commentsCount = currentEvento?.commentsCount ?? (currentEvento?.comments?.length || currentEvento?.comentarios?.length || 0);
 
   const handleLike = () => {
     if (!isAuthenticated()) {
@@ -62,23 +63,23 @@ const DetalheEvento = ({ evento, onVoltar, onEventoUpdate }) => {
     setIsSubmittingComment(true);
 
     try {
-      const comment = eventService.addComment(
-        currentEvento.id, 
-        user.id, 
-        user.nome || user.name || 'Usuário', 
-        newComment.trim()
-      );
-
-      if (comment) {
+      const response = await apiEventService.addComment(currentEvento.id, newComment.trim());
+      
+      if (response && response.comentario) {
         setNewComment('');
-        toast.success('Comentário adicionado!');
+        toast.success('Comentário adicionado com sucesso!');
         
-        const updatedEvent = eventService.getEventById(currentEvento.id);
-        if (updatedEvent) {
-          setCurrentEvento(updatedEvent);
-          if (onEventoUpdate) {
-            onEventoUpdate(updatedEvent);
-          }
+        // Atualiza a lista de comentários localmente
+        const listaAtual = currentEvento.comments || currentEvento.comentarios || [];
+        const eventoAtualizado = {
+          ...currentEvento,
+          comments: [...listaAtual, response.comentario],
+          commentsCount: (currentEvento.commentsCount || listaAtual.length) + 1
+        };
+
+        setCurrentEvento(eventoAtualizado);
+        if (onEventoUpdate) {
+          onEventoUpdate(eventoAtualizado);
         }
       }
     } catch (error) {

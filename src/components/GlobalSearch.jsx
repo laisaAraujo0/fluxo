@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { buscarEventosPorTermo } from '@/services/api';
+// Trocado de api.js para o novo apiEventService que acessa o banco real
+import apiEventService from '@/services/apiEventService';
 
 const GlobalSearch = ({ onClose }) => {
   const [query, setQuery] = useState('');
@@ -37,10 +38,19 @@ const GlobalSearch = ({ onClose }) => {
 
   const performSearch = async (searchQuery) => {
     try {
-      const eventosResponse = await buscarEventosPorTermo(searchQuery);
+      // Buscando todos os eventos e filtrando no frontend por enquanto (forma mais segura)
+      const response = await apiEventService.getAllEvents();
+      // O getAllEvents retorna { eventos, total, paginas } dependendo da API, ou array direto.
+      const allEvents = Array.isArray(response) ? response : (response.eventos || []);
+      const filtered = allEvents.filter(e => 
+        e.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        e.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        e.titulo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        e.descricao?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
 
       const mockResults = {
-        eventos: eventosResponse.success ? eventosResponse.data : [],
+        eventos: filtered.slice(0, 5), // Mostra os 5 primeiros
         reclamacoes: [
           {
             id: 1,
@@ -147,20 +157,20 @@ const GlobalSearch = ({ onClose }) => {
                     <div className="flex items-start gap-3">
                       <div
                         className="w-12 h-12 bg-cover bg-center rounded flex-shrink-0"
-                        style={{ backgroundImage: `url("${evento.imagem}")` }}
+                        style={{ backgroundImage: `url("${evento.image || evento.imagem}")` }}
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <p className="font-medium line-clamp-1">{evento.titulo}</p>
+                          <p className="font-medium line-clamp-1">{evento.title || evento.titulo}</p>
                           <Badge
-                            className={`${getCategoryColor(evento.categoria)} text-white text-xs flex-shrink-0`}
+                            className={`${getCategoryColor(evento.category || evento.categoria)} text-white text-xs flex-shrink-0`}
                           >
-                            {evento.categoria}
+                            {evento.category || evento.categoria}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground line-clamp-1">{evento.endereco}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-1">{evento.location || evento.endereco}</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(evento.dataInicio).toLocaleDateString('pt-BR')}
+                          {new Date(evento.startDate || evento.dataInicio).toLocaleDateString('pt-BR')}
                         </p>
                       </div>
                     </div>

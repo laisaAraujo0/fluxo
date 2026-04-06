@@ -4,111 +4,109 @@ class CategoryService {
     this.categories = this.loadCategories();
   }
 
-  // Carregar categorias do localStorage
+  // Carregar categorias
   loadCategories() {
-    const savedCategories = localStorage.getItem('categories');
-    if (savedCategories) {
-      return JSON.parse(savedCategories);
-    }
-    
+    // Força a limpeza do cache antigo para usar os novos Enums
+    localStorage.removeItem('categories');
+
     // Categorias padrão
     return [
       {
-        id: 'infraestrutura',
+        id: 'INFRASTRUCTURE',
         nome: 'Infraestrutura',
         descricao: 'Problemas e eventos relacionados à infraestrutura urbana',
         cor: '#ef4444',
         icone: '🏗️'
       },
       {
-        id: 'cultura',
+        id: 'CULTURE',
         nome: 'Cultura',
         descricao: 'Eventos culturais e artísticos',
         cor: '#f59e0b',
         icone: '🎭'
       },
       {
-        id: 'esporte',
+        id: 'SPORT',
         nome: 'Esporte',
         descricao: 'Eventos e atividades esportivas',
         cor: '#10b981',
         icone: '⚽'
       },
       {
-        id: 'educação',
+        id: 'EDUCATION',
         nome: 'Educação',
         descricao: 'Eventos educacionais e workshops',
         cor: '#3b82f6',
         icone: '📚'
       },
       {
-        id: 'saúde',
+        id: 'HEALTH',
         nome: 'Saúde',
         descricao: 'Eventos relacionados à saúde e bem-estar',
         cor: '#06b6d4',
         icone: '⚕️'
       },
       {
-        id: 'meio-ambiente',
+        id: 'ENVIRONMENT',
         nome: 'Meio Ambiente',
         descricao: 'Iniciativas ambientais e sustentabilidade',
         cor: '#10b981',
         icone: '🌿'
       },
       {
-        id: 'tecnologia',
+        id: 'TECHNOLOGY',
         nome: 'Tecnologia',
         descricao: 'Eventos de tecnologia e inovação',
         cor: '#8b5cf6',
         icone: '💻'
       },
       {
-        id: 'gastronomia',
+        id: 'GASTRONOMY',
         nome: 'Gastronomia',
-        descricao: 'Eventos gastronômicos e culinários',
-        cor: '#ec4899',
-        icone: '🍽️'
+        descricao: 'Eventos gastronômicos e feiras de comida',
+        cor: '#f97316',
+        icone: '🍔'
       },
       {
-        id: 'música',
+        id: 'MUSIC',
         nome: 'Música',
-        descricao: 'Eventos musicais e shows',
-        cor: '#d946ef',
+        descricao: 'Shows, concertos e apresentações musicais',
+        cor: '#ec4899',
         icone: '🎵'
       },
       {
-        id: 'arte',
+        id: 'ART',
         nome: 'Arte',
-        descricao: 'Exposições e eventos artísticos',
-        cor: '#f97316',
+        descricao: 'Exposições de arte, galerias e intervenções urbanas',
+        cor: '#d946ef',
         icone: '🎨'
       },
       {
-        id: 'segurança',
+        id: 'SECURITY',
         nome: 'Segurança',
-        descricao: 'Questões de segurança pública',
-        cor: '#dc2626',
-        icone: '🚨'
+        descricao: 'Questões e eventos de segurança pública',
+        cor: '#1e3a8a',
+        icone: '🚓'
       },
       {
-        id: 'mobilidade-urbana',
+        id: 'URBAN_MOBILITY',
         nome: 'Mobilidade Urbana',
-        descricao: 'Transporte e mobilidade urbana',
-        cor: '#0891b2',
-        icone: '🚌'
+        descricao: 'Trânsito, ciclovias e transporte',
+        cor: '#64748b',
+        icone: '🚲'
       },
       {
-        id: 'evento-comunitário',
+        id: 'COMMUNITY_EVENT',
         nome: 'Evento Comunitário',
-        descricao: 'Eventos comunitários diversos',
-        cor: '#6366f1',
-        icone: '👥'
+        descricao: 'Reuniões de bairro, assembleias e encontros locais',
+        cor: '#14b8a6',
+        icone: '🤝'
       },
       {
-        id: 'outros',
+        id: 'OTHER',
         nome: 'Outros',
-        descricao: 'Outras categorias',
-        cor: '#6b7280',
+        descricao: 'Demais eventos não categorizados',
+        cor: '#64748b',
         icone: '📌'
       }
     ];

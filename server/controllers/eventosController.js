@@ -9,10 +9,15 @@ export const criarEvento = [
   validate(eventCreationSchema),
   async (req, res) => {
     try {
+    console.log('📥 Backend: Requisição de criação de evento recebida');
+    console.log('👤 Usuário da requisição:', req.usuario);
+    console.log('📦 Body da requisição:', req.body);
+    
     const { title, description, location, category, imageUrl } = req.body;
     const authorId = req.usuario?.id;
 
     if (!authorId) {
+      console.log('❌ Erro: Usuário não autenticado');
       return res.status(401).json({ error: 'Usuário não autenticado' });
     }
 
@@ -63,12 +68,19 @@ export const listarEventos = async (req, res) => {
     if (category) where.category = category;
     if (status) where.status = status;
 
+    console.log('📋 Backend: Listando eventos com filtros:', where);
+
     const [eventos, total] = await Promise.all([
       prisma.event.findMany({
         where,
         include: {
           author: { select: { id: true, name: true, email: true, cidade: true, estado: true } },
-          comments: true,
+          comments: {
+            include: {
+              author: { select: { id: true, name: true, avatar: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+          },
           likes: true,
         },
         orderBy: { createdAt: 'desc' },
@@ -77,6 +89,11 @@ export const listarEventos = async (req, res) => {
       }),
       prisma.event.count({ where }),
     ]);
+
+    console.log(`📊 Backend: Encontrados ${eventos.length} eventos (total: ${total})`);
+    eventos.forEach(evento => {
+      console.log(`🎯 Evento ${evento.id}: ${evento.title} - Likes: ${evento.likes?.length || 0}`);
+    });
 
     return res.json({
       eventos,
@@ -205,15 +222,27 @@ export const adicionarComentario = async (req, res) => {
     const { content } = req.body;
     const authorId = req.usuario?.id;
 
-    if (!content) return res.status(400).json({ error: 'Comentário não pode ser vazio' });
+    console.log('💬 Backend: Iniciando adicionarComentario');
+    console.log('💬 Backend: Evento ID:', id);
+    console.log('💬 Backend: Conteúdo:', content);
+    console.log('💬 Backend: Author ID:', authorId);
+
+    if (!content) {
+      console.log('💬 Backend: Erro - conteúdo vazio');
+      return res.status(400).json({ error: 'Comentário não pode ser vazio' });
+    }
 
     const evento = await prisma.event.findUnique({
       where: { id },
       select: { authorId: true, title: true }
     });
 
-    if (!evento) return res.status(404).json({ error: 'Evento não encontrado' });
+    if (!evento) {
+      console.log('💬 Backend: Erro - evento não encontrado');
+      return res.status(404).json({ error: 'Evento não encontrado' });
+    }
 
+    console.log('💬 Backend: Criando comentário...');
     const comentario = await prisma.comment.create({
       data: {
         content,
@@ -225,22 +254,76 @@ export const adicionarComentario = async (req, res) => {
       },
     });
 
+    console.log('💬 Backend: Comentário criado:', comentario);
+
+    // Buscar o nome do usuário que fez o comentário (já que req.usuario.name pode falhar se o token for antigo)
+    const userAcao = await prisma.user.findUnique({ where: { id: authorId }, select: { name: true, email: true } });
+    const nomeUsuario = userAcao?.name || userAcao?.email || 'um usuário';
+
     // Notificação para o autor do evento
     if (evento.authorId !== authorId) {
       await createNotification(
         evento.authorId,
         'COMMENT',
-        `Seu evento "${evento.title}" recebeu um novo comentário de ${req.usuario.name}.`
+        `Seu evento "${evento.title}" recebeu um novo comentário de ${nomeUsuario}.`
       );
     }
+
+    // Invalida o cache para que novos acessos (ou F5) vejam o comentário
+    invalidateCacheByPrefix('/api/eventos');
+    invalidateCacheByPrefix(`/api/eventos/${id}`);
 
     return res.status(201).json({
       message: 'Comentário adicionado com sucesso',
       comentario,
     });
   } catch (error) {
-    console.error('Erro ao adicionar comentário:', error);
+    console.error('💬 Backend: Erro ao adicionar comentário:', error);
     return res.status(500).json({ error: 'Erro ao adicionar comentário' });
+  }
+};
+
+// Deletar comentário
+export const removerComentario = async (req, res) => {
+  try {
+    const { id, commentId } = req.params;
+    const userId = req.usuario?.id;
+
+    console.log(`🗑️ Backend: Requisição para deletar comentário ${commentId} do evento ${id}`);
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    // Verificar se o comentário existe e se pertence ao usuário
+    const comentario = await prisma.comment.findUnique({
+      where: { id: commentId },
+    });
+
+    if (!comentario) {
+      return res.status(404).json({ error: 'Comentário não encontrado' });
+    }
+
+    // Apenas o autor do comentário pode deletá-lo
+    if (comentario.authorId !== userId) {
+      return res.status(403).json({ error: 'Você não tem permissão para deletar este comentário' });
+    }
+
+    // Deletar o comentário
+    await prisma.comment.delete({
+      where: { id: commentId },
+    });
+
+    console.log('✅ Backend: Comentário deletado com sucesso');
+    
+    // Invalida o cache para refletir a deleção do comentário no próximo F5
+    invalidateCacheByPrefix('/api/eventos');
+    invalidateCacheByPrefix(`/api/eventos/${id}`);
+
+    return res.json({ message: 'Comentário deletado com sucesso' });
+  } catch (error) {
+    console.error('❌ Erro ao deletar comentário:', error);
+    return res.status(500).json({ error: 'Erro ao deletar comentário' });
   }
 };
 
@@ -250,7 +333,14 @@ export const votarEvento = async (req, res) => {
     const { id } = req.params; // eventId
     const userId = req.usuario?.id;
 
-    if (!userId) return res.status(401).json({ error: 'Usuário não autenticado' });
+    console.log('🗳️ Backend: Iniciando votarEvento');
+    console.log('📋 Evento ID:', id);
+    console.log('👤 User ID:', userId);
+
+    if (!userId) {
+      console.log('❌ Erro: Usuário não autenticado');
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
 
     const likeExistente = await prisma.like.findUnique({
       where: {
@@ -258,39 +348,107 @@ export const votarEvento = async (req, res) => {
       },
     });
 
+    console.log('🔍 Like existente:', likeExistente);
+
     const evento = await prisma.event.findUnique({
       where: { id },
       select: { authorId: true, title: true }
     });
 
-    if (!evento) return res.status(404).json({ error: 'Evento não encontrado' });
+    if (!evento) {
+      console.log('❌ Erro: Evento não encontrado');
+      return res.status(404).json({ error: 'Evento não encontrado' });
+    }
 
     if (likeExistente) {
+      console.log('👎 Removendo curtida existente');
       await prisma.like.delete({
         where: { userId_eventId: { userId, eventId: id } },
       });
-      return res.json({ message: 'Curtida removida com sucesso' });
+      console.log('✅ Curtida removida com sucesso');
+      
+      // Invalida o cache após descurtir
+      invalidateCacheByPrefix('/api/eventos');
+      invalidateCacheByPrefix(`/api/eventos/${id}`);
+
+      // Retornar evento atualizado
+      const eventoAtualizado = await prisma.event.findUnique({
+        where: { id },
+        include: {
+          author: { select: { id: true, name: true, email: true, cidade: true, estado: true } },
+          comments: {
+            include: {
+              author: { select: { id: true, name: true, avatar: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+          },
+          likes: true,
+        },
+      });
+      
+      console.log('📊 Evento atualizado após remover curtida:');
+      console.log('📊 Total de likes:', eventoAtualizado.likes?.length || 0);
+      console.log('📊 Likes detalhados:', eventoAtualizado.likes);
+      console.log('📊 Retornando resposta completa:', { message: 'Curtida removida com sucesso', evento: eventoAtualizado });
+      console.log('📊 Tipo do eventoAtualizado:', typeof eventoAtualizado);
+      console.log('📊 EventoAtualizado tem ID?', eventoAtualizado.id);
+      console.log('📊 EventoAtualizado tem likes?', Array.isArray(eventoAtualizado.likes));
+      
+      return res.json({ message: 'Curtida removida com sucesso', evento: eventoAtualizado });
     }
 
+    console.log('👍 Criando nova curtida');
     await prisma.like.create({
       data: {
         userId,
         eventId: id,
       },
     });
+    console.log('✅ Curtida criada com sucesso');
+
+    // Invalida o cache após curtir
+    invalidateCacheByPrefix('/api/eventos');
+    invalidateCacheByPrefix(`/api/eventos/${id}`);
+
+    // Buscar o nome do usuário que curtiu
+    const userAcao = await prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } });
+    const nomeUsuario = userAcao?.name || userAcao?.email || 'um usuário';
 
     // Notificação para o autor do evento
     if (evento.authorId !== userId) {
       await createNotification(
         evento.authorId,
         'LIKE',
-        `Seu evento "${evento.title}" recebeu uma curtida de ${req.usuario.name}.`
+        `Seu evento "${evento.title}" recebeu uma curtida de ${nomeUsuario}.`
       );
     }
 
-    return res.json({ message: 'Evento curtido com sucesso' });
+    // Retornar evento atualizado
+    const eventoAtualizado = await prisma.event.findUnique({
+      where: { id },
+      include: {
+        author: { select: { id: true, name: true, email: true, cidade: true, estado: true } },
+        comments: {
+          include: {
+            author: { select: { id: true, name: true, avatar: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+        likes: true,
+      },
+    });
+    
+    console.log('📊 Evento atualizado com nova curtida:');
+    console.log('📊 Total de likes:', eventoAtualizado.likes?.length || 0);
+    console.log('📊 Likes detalhados:', eventoAtualizado.likes);
+    console.log('📊 Retornando resposta completa:', { message: 'Evento curtido com sucesso', evento: eventoAtualizado });
+    console.log('📊 Tipo do eventoAtualizado:', typeof eventoAtualizado);
+    console.log('📊 EventoAtualizado tem ID?', eventoAtualizado.id);
+    console.log('📊 EventoAtualizado tem likes?', Array.isArray(eventoAtualizado.likes));
+    
+    return res.json({ message: 'Evento curtido com sucesso', evento: eventoAtualizado });
   } catch (error) {
-    console.error('Erro ao curtir evento:', error);
+    console.error('❌ Erro ao curtir evento:', error);
     return res.status(500).json({ error: 'Erro ao curtir evento' });
   }
 };

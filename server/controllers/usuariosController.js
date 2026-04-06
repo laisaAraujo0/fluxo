@@ -11,25 +11,33 @@ export const registrarUsuario = [
   validate(userRegistrationSchema),
   async (req, res) => {
     try {
+      console.log('📥 Backend: Requisição de registro recebida');
+      console.log('📦 Body recebido:', req.body);
+      
       const { nome, email, senha, username, avatar, bio, cidade, estado, telefone, status } = req.body;
 
       if (!senha || senha.length < 8) {
+        console.log('❌ Senha muito curta:', senha?.length);
         return res.status(400).json({ erro: "Senha deve ter pelo menos 8 caracteres" });
       }
 
       // Verificar se email ou username já existem
+      console.log('🔍 Verificando se usuário já existe...');
       const usuarioExistente = await prisma.user.findFirst({
         where: { OR: [{ email }, { username }] },
       });
 
       if (usuarioExistente) {
+        console.log('❌ Usuário já existe:', usuarioExistente.email);
         return res.status(400).json({ erro: "Email ou username já cadastrados" });
       }
 
       // Hash da senha
+      console.log('🔐 Criando hash da senha...');
       const senhaHash = await bcrypt.hash(senha, 10);
 
       // Criar usuário
+      console.log('💾 Criando usuário no banco de dados...');
       const usuario = await prisma.user.create({
         data: {
           name: nome, // Corrigindo para 'name' conforme schema.prisma
@@ -45,7 +53,7 @@ export const registrarUsuario = [
         },
         select: {
           id: true,
-          nome: true,
+          name: true,
           email: true,
           username: true,
           avatar: true,
@@ -58,12 +66,17 @@ export const registrarUsuario = [
         },
       });
 
-      // Gerar token JWT
-      const token = jwt.sign({ id: usuario.id, email: usuario.email }, JWT_SECRET, { expiresIn: "7d" });
+      console.log('✅ Usuário criado com sucesso:', usuario.id);
 
+      // Gerar token JWT
+      console.log('🔑 Gerando token JWT...');
+      const token = jwt.sign({ id: usuario.id, email: usuario.email, name: usuario.name }, JWT_SECRET, { expiresIn: "7d" });
+
+    console.log('🎉 Registro completo! Enviando resposta...');
       res.status(201).json({ mensagem: "Usuário registrado com sucesso", usuario, token });
     } catch (error) {
-      console.error("Erro ao registrar usuário:", error);
+      console.error("❌ Erro ao registrar usuário:", error);
+      console.error("📄 Stack trace:", error.stack);
       res.status(500).json({ erro: "Erro ao registrar usuário" });
     }
   }
@@ -83,10 +96,10 @@ export const loginUsuario = async (req, res) => {
 
     if (!usuario) return res.status(401).json({ erro: "Email ou senha inválidos" });
 
-    const senhaValida = await bcrypt.compare(senha, usuario.senha);
+    const senhaValida = await bcrypt.compare(senha, usuario.password);
     if (!senhaValida) return res.status(401).json({ erro: "Email ou senha inválidos" });
 
-    const token = jwt.sign({ id: usuario.id, email: usuario.email }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ id: usuario.id, email: usuario.email, name: usuario.name }, JWT_SECRET, { expiresIn: "7d" });
 
     const { password: _, ...usuarioSemSenha } = usuario;
 
@@ -100,11 +113,15 @@ export const loginUsuario = async (req, res) => {
 // Obter perfil do usuário
 export const obterPerfil = async (req, res) => {
   try {
+    if (!req.usuario || !req.usuario.id) {
+      return res.status(401).json({ erro: "Usuário não autenticado" });
+    }
+
     const usuario = await prisma.user.findUnique({
       where: { id: req.usuario.id },
       select: {
         id: true,
-        nome: true,
+        name: true,
         email: true,
         username: true,
         avatar: true,
@@ -125,10 +142,43 @@ export const obterPerfil = async (req, res) => {
 
     if (!usuario) return res.status(404).json({ erro: "Usuário não encontrado" });
 
-    res.json(usuario);
+    res.json({ usuario });
   } catch (error) {
     console.error("Erro ao obter perfil:", error);
-    res.status(500).json({ erro: "Erro ao obter perfil" });
+    res.status(500).json({ erro: "Erro ao obter perfil", detalhes: error.message });
+  }
+};
+
+// Obter estatísticas do usuário usando a UDF
+export const obterEstatisticas = async (req, res) => {
+  try {
+    if (!req.usuario || !req.usuario.id) {
+      return res.status(401).json({ erro: "Usuário não autenticado" });
+    }
+
+    const userId = req.usuario.id;
+    // Chama a function do banco de dados!
+    const relatorio = await prisma.$queryRaw`SELECT * FROM get_user_activity_report(${userId})`;
+    
+    if (relatorio && relatorio.length > 0) {
+      // Como o Prisma $queryRaw retorna objetos em que as propriedades bigint precisam ser convertidas para string/number
+      const stats = relatorio[0];
+      const serializedStats = {};
+      
+      for (const key in stats) {
+        if (typeof stats[key] === 'bigint') {
+          serializedStats[key] = Number(stats[key]);
+        } else {
+          serializedStats[key] = stats[key];
+        }
+      }
+      
+      return res.json(serializedStats);
+    }
+    return res.json({});
+  } catch (error) {
+    console.error("Erro ao obter estatísticas:", error);
+    res.status(500).json({ erro: "Erro ao obter estatísticas", detalhes: error.message });
   }
 };
 
@@ -154,7 +204,7 @@ export const atualizarPerfil = async (req, res) => {
     const usuarioAtualizado = await prisma.user.update({
       where: { id: req.usuario.id },
       data: {
-        nome,
+        name: nome,
         telefone,
         cidade,
         estado,
@@ -170,7 +220,7 @@ export const atualizarPerfil = async (req, res) => {
       },
       select: {
         id: true,
-        nome: true,
+        name: true,
         email: true,
         username: true,
         avatar: true,

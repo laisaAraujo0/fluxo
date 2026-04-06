@@ -1,8 +1,7 @@
 import { io } from 'socket.io-client';
 
-// A URL do servidor de backend. 
-// Deve ser configurável via variável de ambiente no Vite (import.meta.env.VITE_API_BASE_URL)
-// Assumindo que a API e o Socket estão no mesmo host/porta
+// Configuração do socket.io
+// Usando a mesma URL base da API
 const SOCKET_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
 // Conecta ao servidor Socket.IO

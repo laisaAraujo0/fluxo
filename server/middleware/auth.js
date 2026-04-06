@@ -7,15 +7,19 @@ export const verificarToken = (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
 
+    console.log('🔐 Middleware Auth: Token recebido:', token ? 'Sim' : 'Não');
+    console.log('📋 Middleware Auth: Headers:', req.headers.authorization);
+
     if (!token) {
       return res.status(401).json({ erro: 'Token não fornecido' });
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
+    console.log('✅ Middleware Auth: Token decodificado:', decoded);
     req.usuario = decoded;
     next();
   } catch (error) {
-    console.error('Erro ao verificar token:', error);
+    console.error('❌ Middleware Auth: Erro ao verificar token:', error);
     return res.status(401).json({ erro: 'Token inválido ou expirado' });
   }
 };
