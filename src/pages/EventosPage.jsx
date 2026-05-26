@@ -12,7 +12,7 @@ import { subscribeToBroadcast, unsubscribeFromBroadcast } from '@/services/socke
 import { toast } from 'sonner';
 
 const EventosPage = () => {
-  const { isAuthenticated } = useUser();
+  const { isAuthenticated, user } = useUser();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentView, setCurrentView] = useState('lista');
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
@@ -399,14 +399,27 @@ const EventosPage = () => {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {paginatedEvents.map((evento) => (
-                <EventCard
-                  key={evento.id}
-                  evento={evento}
-                  onEventoClick={() => handleVerDetalhes(evento)}
-                  onEventoUpdate={(e) =>
-                    setEventos((prev) => prev.map((ev) => (ev.id === e.id ? e : ev)))
+                // ✅ Correto — com onEdit e onDelete
+              <EventCard
+                key={evento.id}
+                evento={evento}
+                onEventoClick={() => handleVerDetalhes(evento)}
+                onEventoUpdate={(e) =>
+                  setEventos((prev) => prev.map((ev) => (ev.id === e.id ? e : ev)))
+                }
+                onEdit={(evento) => {
+                  setEventoParaEditar(evento);
+                  setCurrentView('registro');
+                }}
+                onDelete={(eventoId) => {
+                  const confirmado = window.confirm('Tem certeza que deseja excluir este evento?');
+                  if (confirmado) {
+                    eventService.deleteEvent(eventoId, user.id);
+                    setEventos((prev) => prev.filter((e) => e.id !== eventoId));
+                    toast.success('Evento excluído com sucesso!');
                   }
-                />
+                }}
+              />
               ))}
             </div>
 

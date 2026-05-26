@@ -242,7 +242,7 @@ const RegistroEvento = ({ onVoltar, onEventoAdicionado, eventoParaEditar }) => {
   );
 };
 ///////////////////////////////
-      const [dataInicio, setDataInicio] = useState(
+      {/*const [dataInicio, setDataInicio] = useState(
         formData.dataInicio ? new Date(formData.dataInicio) : null
       );
       const [dataFim, setDataFim] = useState(
@@ -253,7 +253,7 @@ const RegistroEvento = ({ onVoltar, onEventoAdicionado, eventoParaEditar }) => {
       useEffect(() => {
         if (dataInicio) handleInputChange("dataInicio", dataInicio.toISOString());
         if (dataFim) handleInputChange("dataFim", dataFim.toISOString());
-      }, [dataInicio, dataFim]);
+      }, [dataInicio, dataFim]);*/}
 
   return (
     <div className="container mx-auto flex-grow px-4 sm:px-6 lg:px-8 py-12">
@@ -286,19 +286,25 @@ const RegistroEvento = ({ onVoltar, onEventoAdicionado, eventoParaEditar }) => {
               <Textarea id="description" name="description" value={formData.descricao} onChange={(e) => handleInputChange('descricao', e.target.value)} placeholder="Descreva o evento com o máximo de detalhes possível..." rows={4} className="block w-full py-3 px-4" required />
             </div>
           </div>
+
           {/* Datas com ícones */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+
               {/* Data Início */}
               <div>
                 <Label htmlFor="dataInicio">Data Início</Label>
+
                 <div className="relative mt-1">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
+
                   <input
                     type="date"
                     id="dataInicio"
                     name="dataInicio"
                     value={formData.dataInicio}
-                    onChange={(e) => handleInputChange('dataInicio', e.target.value)}
+                    onChange={(e) => 
+                      handleInputChange('dataInicio', e.target.value)
+                    }
                     className="w-full border rounded-md pl-10 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                     required
                   />
@@ -308,19 +314,43 @@ const RegistroEvento = ({ onVoltar, onEventoAdicionado, eventoParaEditar }) => {
               {/* Data Fim */}
               <div>
                 <Label htmlFor="dataFim">Data Fim</Label>
+
                 <div className="relative mt-1">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
+
                   <input
                     type="date"
                     id="dataFim"
                     name="dataFim"
                     value={formData.dataFim}
-                    onChange={(e) => handleInputChange('dataFim', e.target.value)}
+                    onChange={(e) => 
+                      handleInputChange('dataFim', e.target.value)
+                    }
                     className="w-full border rounded-md pl-10 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                     required
                   />
                 </div>
               </div>
+
+              {/* Horário */}
+                <div className="mt-2">
+                  <Label htmlFor="horario">Horário</Label>
+
+                  <div className="relative mt-2">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
+
+                    <input
+                      type="time"
+                      id="horario"
+                      name="horario"
+                      value={formData.horario}
+                      onChange={(e) =>
+                        handleInputChange('horario', e.target.value)
+                      }
+                      className="w-full border rounded-md pl-10 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                </div>
             </div>
           <div>
             <Label htmlFor="category">Categoria *</Label>
