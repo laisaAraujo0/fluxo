@@ -1,130 +1,71 @@
-// Serviço de API para buscar reclamações
-import { toast } from 'sonner';
+import { api } from './api';
 
-const API_URL = '/api/reclamacoes';
-
-// Função auxiliar para simular delay de rede (se necessário)
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-/**
- * Busca a lista de reclamações com filtros opcionais.
- * @param {object} params - Parâmetros de filtro.
- * @param {string} [params.localidade] - Nome da cidade para filtrar.
- * @param {string} [params.uf] - Sigla do estado para filtrar.
- * @returns {Promise<{success: boolean, data: Array<object>, error: string}>}
- */
-export const buscarReclamacoes = async (params = {}) => {
-  // await delay(500); // Simular delay de rede
-  
-  try {
-    const queryParams = new URLSearchParams(params).toString();
-    const url = `${API_URL}?${queryParams}`;
-    
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Erro ao buscar reclamações');
-    }
-    
-    const data = await response.json();
-    
-    // Simular dados mockados no frontend se a API não retornar nada (apenas para desenvolvimento)
-    if (!data.reclamacoes || data.reclamacoes.length === 0) {
-      // Retornar os dados mockados que estavam na ReclamacoesPage.jsx
-      const mockReclamacoes = [
-        {
-          id: 1,
-          titulo: "Buraco na Rua Principal",
-          status: "PENDING",
-          priority: "HIGH",
-          likes: 15,
-          comentarios: 5,
-          categoria: "Infraestrutura",
-          estado: "SP",
-          cidade: "São Paulo",
-          location: "São Paulo, SP",
-        },
-        {
-          id: 2,
-          titulo: "Iluminação Pública Defeituosa",
-          status: "RESOLVED",
-          priority: "MEDIUM",
-          likes: 20,
-          comentarios: 10,
-          categoria: "Serviços Públicos",
-          estado: "RJ",
-          cidade: "Rio de Janeiro",
-          location: "Rio de Janeiro, RJ",
-        },
-        {
-          id: 3,
-          titulo: "Acúmulo de Lixo",
-          status: "PENDING",
-          priority: "LOW",
-          likes: 5,
-          comentarios: 2,
-          categoria: "Meio Ambiente",
-          estado: "SP",
-          cidade: "São Paulo",
-          location: "São Paulo, SP",
-        },
-        {
-          id: 4,
-          titulo: "Vazamento de Água",
-          status: "RESOLVED",
-          priority: "HIGH",
-          likes: 25,
-          comentarios: 15,
-          categoria: "Saneamento",
-          estado: "MG",
-          cidade: "Belo Horizonte",
-          location: "Belo Horizonte, MG",
-        },
-        {
-          id: 5,
-          titulo: "Pichação em Prédio Público",
-          status: "PENDING",
-          priority: "MEDIUM",
-          likes: 10,
-          comentarios: 3,
-          categoria: "Segurança",
-          estado: "RJ",
-          cidade: "Rio de Janeiro",
-          location: "Rio de Janeiro, RJ",
-        },
-      ];
-      
-      // Aplicar filtro de localização no mock
-      let filteredMock = mockReclamacoes;
-      if (params.localidade && params.uf) {
-        filteredMock = mockReclamacoes.filter(r => 
-          r.cidade === params.localidade && r.estado === params.uf
-        );
-      }
-      
-      return {
-        success: true,
-        data: filteredMock,
-        total: filteredMock.length
-      };
-    }
-    
-    return {
-      success: true,
-      data: data.reclamacoes,
-      total: data.reclamacoes.length
-    };
-  } catch (error) {
-    toast.error(error.message);
-    return {
-      success: false,
-      error: error.message,
-      data: []
-    };
-  }
+export const listarOrgaos = async () => {
+  const { data } = await api.get('/api/reclamacoes/orgaos');
+  return data.agencies;
 };
 
-export default {
-  buscarReclamacoes,
+export const listarDepartamentos = async (agencyId) => {
+  const { data } = await api.get(`/api/reclamacoes/orgaos/${agencyId}/departamentos`);
+  return data.departments;
+};
+
+export const criarReclamacao = async (payload) => {
+  const { data } = await api.post('/api/reclamacoes', payload);
+  return data.reclamacao;
+};
+
+export const minhasReclamacoes = async () => {
+  const { data } = await api.get('/api/reclamacoes/my');
+  return data.reclamacoes;
+};
+
+export const buscarReclamacao = async (id) => {
+  const { data } = await api.get(`/api/reclamacoes/${id}`);
+  return data.reclamacao;
+};
+
+export const adminDashboard = async () => {
+  const { data } = await api.get('/api/reclamacoes/admin/dashboard');
+  return data;
+};
+
+export const adminReclamacoes = async (params = {}) => {
+  const { data } = await api.get('/api/reclamacoes/admin', { params });
+  return data.reclamacoes;
+};
+
+export const alterarStatus = async (id, payload) => {
+  const { data } = await api.patch(`/api/reclamacoes/${id}/status`, payload);
+  return data.reclamacao;
+};
+
+export const enviarMensagem = async (id, message) => {
+  const { data } = await api.post(`/api/reclamacoes/${id}/message`, { message });
+  return data.message;
+};
+
+export const atribuirReclamacao = async (id, userId) => {
+  const { data } = await api.post(`/api/reclamacoes/${id}/assign`, { userId });
+  return data;
+};
+
+export const adicionarAnexo = async (id, attachment) => {
+  const { data } = await api.post(`/api/reclamacoes/${id}/attachment`, attachment);
+  return data.attachment;
+};
+
+export const confirmarResolucao = async (id) => {
+  const { data } = await api.post(`/api/reclamacoes/${id}/confirm`);
+  return data.reclamacao;
+};
+
+export const reabrirReclamacao = async (id, reason) => {
+  const { data } = await api.post(`/api/reclamacoes/${id}/reopen`, { reason });
+  return data.reclamacao;
+};
+
+export const listarEquipe = async () => {
+  const { data } = await api.get('/api/usuarios');
+  return data;
 };

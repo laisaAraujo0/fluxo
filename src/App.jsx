@@ -12,7 +12,9 @@ import AdminLoginPage from './pages/AdminLoginPage';
 import CadastroOrgaoPage from './pages/CadastroOrgaoPage';
 import PerfilPage from './pages/PerfilPage';
 import AdminPage from './pages/AdminPage';
-import DashboardPage from './pages/DashboardPage';
+import NovaReclamacaoPage from './pages/NovaReclamacaoPage';
+import ReclamacaoDetalhePage from './pages/ReclamacaoDetalhePage';
+import AdminComplaintDetailPage from './pages/AdminComplaintDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
 import LoadingScreen from './components/LoadingScreen';
 import './App.css';
@@ -114,6 +116,22 @@ function AppContent() {
               }
             />
             <Route
+              path="reclamacoes/nova"
+              element={
+                <ProtectedUserRoute>
+                  <NovaReclamacaoPage />
+                </ProtectedUserRoute>
+              }
+            />
+            <Route
+              path="reclamacoes/:id"
+              element={
+                <ProtectedUserRoute>
+                  <ReclamacaoDetalhePage />
+                </ProtectedUserRoute>
+              }
+            />
+            <Route
               path="mapas"
               element={
                 <ProtectedUserRoute>
@@ -142,12 +160,16 @@ function AppContent() {
               }
             />
             <Route
-              path="dashboard"
+              path="admin/solicitacoes/:id"
               element={
                 <ProtectedAdminRoute>
-                  <DashboardPage />
+                  <AdminComplaintDetailPage />
                 </ProtectedAdminRoute>
               }
+            />
+            <Route
+              path="dashboard"
+              element={<Navigate to="/admin" replace />}
             />
           </Route>
 

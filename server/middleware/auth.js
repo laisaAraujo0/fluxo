@@ -1,46 +1,76 @@
 import jwt from 'jsonwebtoken';
+import { PrismaClient } from '@prisma/client';
 
+const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'fluxo-secret-key-2024';
 
-// Middleware para verificar token JWT
-export const verificarToken = (req, res, next) => {
+export const criarToken = (usuario) =>
+  jwt.sign(
+    {
+      id: usuario.id,
+      email: usuario.email,
+      role: usuario.role,
+      agencyId: usuario.agencyId || null,
+      departmentId: usuario.departmentId || null,
+    },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+
+export const verificarToken = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
-
-    if (!token) {
-      return res.status(401).json({ erro: 'Token não fornecido' });
-    }
+    if (!token) return res.status(401).json({ erro: 'Token não fornecido' });
 
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.usuario = decoded;
+    const usuario = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true, email: true, name: true, role: true, status: true,
+        agencyId: true, departmentId: true,
+      },
+    });
+
+    if (!usuario || usuario.status !== 'ACTIVE') {
+      return res.status(401).json({ erro: 'Usuário inválido ou bloqueado' });
+    }
+
+    req.usuario = usuario;
     next();
   } catch (error) {
-    console.error('Erro ao verificar token:', error);
     return res.status(401).json({ erro: 'Token inválido ou expirado' });
   }
 };
 
-// Middleware para verificar se é admin
-export const verificarAdmin = (req, res, next) => {
-  if (req.usuario.tipo !== 'admin' && req.usuario.tipo !== 'orgao') {
-    return res.status(403).json({ erro: 'Acesso negado. Apenas administradores.' });
+export const permitirRoles = (...roles) => (req, res, next) => {
+  if (!req.usuario || !roles.includes(req.usuario.role)) {
+    return res.status(403).json({ erro: 'Acesso negado' });
   }
   next();
 };
 
-// Middleware opcional de autenticação (não bloqueia se não houver token)
-export const autenticacaoOpcional = (req, res, next) => {
+export const verificarAdmin = permitirRoles(
+  'AGENCY_ATTENDANT',
+  'AGENCY_MANAGER',
+  'FLUXO_ADMIN'
+);
+
+export const verificarGestorOuAdmin = permitirRoles(
+  'AGENCY_MANAGER',
+  'FLUXO_ADMIN'
+);
+
+export const autenticacaoOpcional = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
-
-    if (token) {
-      const decoded = jwt.verify(token, JWT_SECRET);
-      req.usuario = decoded;
-    }
-    next();
-  } catch (error) {
-    // Ignora erros e continua sem autenticação
-    next();
+    if (!token) return next();
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.usuario = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: { id: true, email: true, name: true, role: true, status: true, agencyId: true, departmentId: true },
+    });
+  } catch {
+    req.usuario = null;
   }
+  next();
 };
-

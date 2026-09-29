@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
@@ -33,6 +34,17 @@ io.on('connection', (socket) => {
   console.log('Novo cliente conectado:', socket.id);
 
 
+
+  socket.on('authenticate', async ({ token } = {}) => {
+    try {
+      const jwt = await import('jsonwebtoken');
+      const decoded = jwt.default.verify(token, process.env.JWT_SECRET || 'fluxo-secret-key-2024');
+      if (decoded.id) socket.join(`user:${decoded.id}`);
+      if (decoded.agencyId) socket.join(`agency:${decoded.agencyId}`);
+    } catch {
+      // Socket continua disponível para eventos públicos.
+    }
+  });
 
   socket.on('disconnect', () => {
     console.log('Cliente desconectado:', socket.id);

@@ -14,6 +14,7 @@ model User {
   username               String      @unique
   avatar                 String?
   bio                    String?
+  password               String
   cidade                 String?
   estado                 String?
   telefone               String?
@@ -28,30 +29,11 @@ model User {
   createdAt              DateTime    @default(now())
   updatedAt              DateTime    @updatedAt
   comments               Comment[]
-  complaints             Complaint[]
+  complaints             Complaint[] @relation("ComplaintAuthor")
   events                 Event[]
   likes                  Like[]
-  notifications          Notification[]
 
   @@map("users")
-}
-
-model Event {
-  id          String        @id @default(cuid())
-  title       String
-  description String
-  location    String
-  imageUrl    String?
-  category    EventCategory
-  status      EventStatus   @default(PENDING)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  authorId    String
-  comments    Comment[]
-  author      User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  likes       Like[]
-
-  @@map("events")
 }
 
 model Complaint {
@@ -67,7 +49,7 @@ model Complaint {
   updatedAt     DateTime        @updatedAt
   authorId      String
   comments      Comment[]
-  author        User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author        User            @relation("ComplaintAuthor", fields: [authorId], references: [id], onDelete: Cascade)
 
   @@map("complaints")
 }
@@ -99,27 +81,6 @@ model Like {
   @@map("likes")
 }
 
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  type      NotificationType
-  content   String
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("notifications")
-}
-
-enum NotificationType {
-  LIKE
-  COMMENT
-  APPROVAL
-  UPDATE
-}
-
 model Category {
   id          String   @id @default(cuid())
   name        String   @unique
@@ -129,6 +90,24 @@ model Category {
   updatedAt   DateTime @updatedAt
 
   @@map("categories")
+}
+
+model Event {
+  id          String        @id @default(cuid())
+  title       String
+  description String
+  location    String
+  imageUrl    String?
+  category    EventCategory
+  status      EventStatus   @default(PENDING)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  authorId    String
+  comments    Comment[]
+  author      User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes       Like[]
+
+  @@map("events")
 }
 
 enum UserStatus {

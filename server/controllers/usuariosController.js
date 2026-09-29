@@ -1,238 +1,174 @@
-import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { validate, userRegistrationSchema } from "../services/validationService.js";
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import { criarToken } from '../middleware/auth.js';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || "fluxo-secret-key-2024";
 
-// Registrar novo usuário
-export const registrarUsuario = [
-  validate(userRegistrationSchema),
-  async (req, res) => {
-    try {
-      const { nome, email, senha, username, avatar, bio, cidade, estado, telefone, status } = req.body;
+const publicUser = (u) => ({
+  id: u.id,
+  nome: u.name,
+  name: u.name,
+  email: u.email,
+  username: u.username,
+  avatar: u.avatar,
+  bio: u.bio,
+  cidade: u.cidade,
+  estado: u.estado,
+  telefone: u.telefone,
+  role: u.role,
+  tipo: u.role === 'CITIZEN' ? 'usuario' : 'administrador',
+  agencyId: u.agencyId,
+  departmentId: u.departmentId,
+  agency: u.agency,
+  department: u.department,
+  status: u.status,
+});
 
-      if (!senha || senha.length < 8) {
-        return res.status(400).json({ erro: "Senha deve ter pelo menos 8 caracteres" });
-      }
+const usernameFromEmail = (email) =>
+  `${email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '')}_${Date.now().toString().slice(-6)}`;
 
-      // Verificar se email ou username já existem
-      const usuarioExistente = await prisma.user.findFirst({
-        where: { OR: [{ email }, { username }] },
-      });
+export const registrarUsuario = async (req, res) => {
+  try {
+    const { nome, email, senha, username, cidade, estado, telefone, avatar, bio } = req.body;
+    if (!nome || !email || !senha) return res.status(400).json({ erro: 'Nome, email e senha são obrigatórios' });
+    if (senha.length < 8) return res.status(400).json({ erro: 'Senha deve ter pelo menos 8 caracteres' });
 
-      if (usuarioExistente) {
-        return res.status(400).json({ erro: "Email ou username já cadastrados" });
-      }
+    const existente = await prisma.user.findUnique({ where: { email } });
+    if (existente) return res.status(409).json({ erro: 'Este email já está cadastrado' });
 
-      // Hash da senha
-      const senhaHash = await bcrypt.hash(senha, 10);
+    const senhaHash = await bcrypt.hash(senha, 10);
+    const usuario = await prisma.user.create({
+      data: {
+        name: nome,
+        email,
+        username: username || usernameFromEmail(email),
+        password: senhaHash,
+        cidade, estado, telefone, avatar, bio,
+        role: 'CITIZEN',
+      },
+    });
 
-      // Criar usuário
-      const usuario = await prisma.user.create({
-        data: {
-          name: nome, // Corrigindo para 'name' conforme schema.prisma
-          email,
-          username,
-          avatar,
-          bio,
-          cidade,
-          estado,
-          telefone,
-          status: status || "ACTIVE",
-          password: senhaHash, // Corrigindo para 'password' conforme schema.prisma
-        },
-        select: {
-          id: true,
-          nome: true,
-          email: true,
-          username: true,
-          avatar: true,
-          bio: true,
-          cidade: true,
-          estado: true,
-          telefone: true,
-          status: true,
-          createdAt: true,
-        },
-      });
-
-      // Gerar token JWT
-      const token = jwt.sign({ id: usuario.id, email: usuario.email }, JWT_SECRET, { expiresIn: "7d" });
-
-      res.status(201).json({ mensagem: "Usuário registrado com sucesso", usuario, token });
-    } catch (error) {
-      console.error("Erro ao registrar usuário:", error);
-      res.status(500).json({ erro: "Erro ao registrar usuário" });
-    }
+    res.status(201).json({
+      mensagem: 'Usuário registrado com sucesso',
+      usuario: publicUser(usuario),
+      token: criarToken(usuario),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Erro ao registrar usuário' });
   }
-];
+};
 
-// Login de usuário
 export const loginUsuario = async (req, res) => {
   try {
     const { email, senha } = req.body;
+    if (!email || !senha) return res.status(400).json({ erro: 'Email e senha são obrigatórios' });
 
-    // Validação básica de login para evitar falhas imediatas
-    if (!email || !senha) {
-      return res.status(400).json({ erro: "Email e senha são obrigatórios" });
-    }
-
-    const usuario = await prisma.user.findUnique({ where: { email } });
-
-    if (!usuario) return res.status(401).json({ erro: "Email ou senha inválidos" });
-
-    const senhaValida = await bcrypt.compare(senha, usuario.senha);
-    if (!senhaValida) return res.status(401).json({ erro: "Email ou senha inválidos" });
-
-    const token = jwt.sign({ id: usuario.id, email: usuario.email }, JWT_SECRET, { expiresIn: "7d" });
-
-    const { password: _, ...usuarioSemSenha } = usuario;
-
-    res.json({ mensagem: "Login realizado com sucesso", usuario: usuarioSemSenha, token });
-  } catch (error) {
-    console.error("Erro ao fazer login:", error);
-    res.status(500).json({ erro: "Erro ao fazer login" });
-  }
-};
-
-// Obter perfil do usuário
-export const obterPerfil = async (req, res) => {
-  try {
     const usuario = await prisma.user.findUnique({
-      where: { id: req.usuario.id },
-      select: {
-        id: true,
-        nome: true,
-        email: true,
-        username: true,
-        avatar: true,
-        bio: true,
-        cidade: true,
-        estado: true,
-        telefone: true,
-        perfilPublico: true,
-        mostrarEmail: true,
-        mostrarCidade: true,
-        mostrarTelefone: true,
-        notificacaoComentarios: true,
-        notificacaoMencoes: true,
-        notificacaoSeguidores: true,
-        createdAt: true,
-      },
+      where: { email },
+      include: { agency: true, department: true },
     });
+    if (!usuario || !(await bcrypt.compare(senha, usuario.password))) {
+      return res.status(401).json({ erro: 'Email ou senha inválidos' });
+    }
+    if (usuario.status !== 'ACTIVE') return res.status(403).json({ erro: 'Usuário bloqueado ou suspenso' });
 
-    if (!usuario) return res.status(404).json({ erro: "Usuário não encontrado" });
-
-    res.json(usuario);
+    res.json({
+      mensagem: 'Login realizado com sucesso',
+      usuario: publicUser(usuario),
+      token: criarToken(usuario),
+    });
   } catch (error) {
-    console.error("Erro ao obter perfil:", error);
-    res.status(500).json({ erro: "Erro ao obter perfil" });
+    console.error(error);
+    res.status(500).json({ erro: 'Erro ao fazer login' });
   }
 };
 
-// Atualizar perfil do usuário
-export const atualizarPerfil = async (req, res) => {
+export const cadastrarOrgao = async (req, res) => {
   try {
     const {
-      nome,
-      telefone,
-      cidade,
-      estado,
-      bio,
-      avatar,
-      perfilPublico,
-      mostrarEmail,
-      mostrarCidade,
-      mostrarTelefone,
-      notificacaoComentarios,
-      notificacaoMencoes,
-      notificacaoSeguidores,
+      nome, cnpj, email, telefone, endereco, cidade, estado,
+      responsavelNome, responsavelEmail, responsavelCargo, senha, departamento,
     } = req.body;
 
-    const usuarioAtualizado = await prisma.user.update({
+    if (!nome || !email || !cidade || !estado || !responsavelNome || !senha) {
+      return res.status(400).json({ erro: 'Preencha os campos obrigatórios' });
+    }
+
+    const existente = await prisma.user.findUnique({ where: { email: responsavelEmail || email } });
+    if (existente) return res.status(409).json({ erro: 'Email do responsável já cadastrado' });
+
+    const agencyExists = await prisma.agency.findFirst({
+      where: { OR: [{ email }, ...(cnpj ? [{ cnpj }] : [])] },
+    });
+    if (agencyExists) return res.status(409).json({ erro: 'Órgão já cadastrado' });
+
+    const senhaHash = await bcrypt.hash(senha, 10);
+    const result = await prisma.$transaction(async (tx) => {
+      const agency = await tx.agency.create({
+        data: { name: nome, email, cnpj: cnpj || null, telefone, endereco, cidade, estado, status: 'ACTIVE' },
+      });
+      const department = await tx.department.create({
+        data: { name: departamento || 'Atendimento Geral', agencyId: agency.id },
+      });
+      const user = await tx.user.create({
+        data: {
+          name: responsavelNome,
+          email: responsavelEmail || email,
+          username: usernameFromEmail(responsavelEmail || email),
+          password: senhaHash,
+          role: 'AGENCY_MANAGER',
+          agencyId: agency.id,
+          departmentId: department.id,
+        },
+        include: { agency: true, department: true },
+      });
+      return { agency, department, user };
+    });
+
+    res.status(201).json({
+      mensagem: 'Órgão cadastrado com sucesso',
+      usuario: publicUser(result.user),
+      token: criarToken(result.user),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ erro: 'Erro ao cadastrar órgão' });
+  }
+};
+
+export const obterPerfil = async (req, res) => {
+  const usuario = await prisma.user.findUnique({
+    where: { id: req.usuario.id },
+    include: { agency: true, department: true },
+  });
+  if (!usuario) return res.status(404).json({ erro: 'Usuário não encontrado' });
+  res.json(publicUser(usuario));
+};
+
+export const atualizarPerfil = async (req, res) => {
+  try {
+    const data = {};
+    const allowed = ['name', 'telefone', 'cidade', 'estado', 'bio', 'avatar', 'perfilPublico', 'mostrarEmail', 'mostrarCidade', 'mostrarTelefone', 'notificacaoComentarios', 'notificacaoMencoes', 'notificacaoSeguidores'];
+    for (const key of allowed) if (req.body[key] !== undefined) data[key] = req.body[key];
+    const usuario = await prisma.user.update({
       where: { id: req.usuario.id },
-      data: {
-        nome,
-        telefone,
-        cidade,
-        estado,
-        bio,
-        avatar,
-        perfilPublico,
-        mostrarEmail,
-        mostrarCidade,
-        mostrarTelefone,
-        notificacaoComentarios,
-        notificacaoMencoes,
-        notificacaoSeguidores,
-      },
-      select: {
-        id: true,
-        nome: true,
-        email: true,
-        username: true,
-        avatar: true,
-        bio: true,
-        cidade: true,
-        estado: true,
-        telefone: true,
-        perfilPublico: true,
-        mostrarEmail: true,
-        mostrarCidade: true,
-        mostrarTelefone: true,
-        notificacaoComentarios: true,
-        notificacaoMencoes: true,
-        notificacaoSeguidores: true,
-        updatedAt: true,
-      },
+      data,
+      include: { agency: true, department: true },
     });
-
-    res.json({ mensagem: "Perfil atualizado com sucesso", usuario: usuarioAtualizado });
+    res.json({ mensagem: 'Perfil atualizado com sucesso', usuario: publicUser(usuario) });
   } catch (error) {
-    console.error("Erro ao atualizar perfil:", error);
-    res.status(500).json({ erro: "Erro ao atualizar perfil" });
+    console.error(error);
+    res.status(500).json({ erro: 'Erro ao atualizar perfil' });
   }
 };
 
-// Listar todos os usuários (admin)
 export const listarUsuarios = async (req, res) => {
-  try {
-    const usuarios = await prisma.user.findMany({
-      select: {
-        id: true,
-        nome: true,
-        email: true,
-        username: true,
-        telefone: true,
-        cidade: true,
-        estado: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    res.json(usuarios);
-  } catch (error) {
-    console.error("Erro ao listar usuários:", error);
-    res.status(500).json({ erro: "Erro ao listar usuários" });
-  }
-};
-
-// Deletar usuário (admin)
-export const deletarUsuario = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const usuarioDeletado = await prisma.user.delete({
-      where: { id },
-      select: { id: true },
-    });
-
-    res.json({ mensagem: "Usuário deletado com sucesso", usuario: usuarioDeletado });
-  } catch (error) {
-    console.error("Erro ao deletar usuário:", error);
-    res.status(500).json({ erro: "Erro ao deletar usuário" });
-  }
+  const where = req.usuario.role === 'FLUXO_ADMIN' ? {} : { agencyId: req.usuario.agencyId };
+  const usuarios = await prisma.user.findMany({
+    where,
+    select: { id: true, name: true, email: true, username: true, role: true, status: true, cidade: true, estado: true, agencyId: true, departmentId: true, createdAt: true },
+    orderBy: { createdAt: 'desc' },
+  });
+  res.json(usuarios);
 };
