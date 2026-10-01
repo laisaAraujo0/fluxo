@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUser } from '@/contexts/UserContext';
 import { toast } from 'sonner';
+import api from '@/services/api';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -31,41 +32,52 @@ const LoginPage = () => {
     return regex.test(email);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    // 🔍 Validação do e-mail
-    if (!validarEmail(formData.email)) {
-      toast.error('Digite um e-mail válido');
-      return;
-    }
+  if (!validarEmail(formData.email)) {
+    toast.error('Digite um e-mail válido');
+    return;
+  }
 
-    // 🔍 Validação da senha
-    if (formData.senha.length < 6) {
-      toast.error('A senha deve ter no mínimo 6 caracteres');
-      return;
-    }
+  if (formData.senha.length < 6) {
+    toast.error('A senha deve ter no mínimo 6 caracteres');
+    return;
+  }
 
-    // 🔍 Buscar usuário salvo
-    const usuarioSalvo = JSON.parse(localStorage.getItem('usuario'));
+  try {
+    const response = await api.post('/api/usuarios/login', {
+      email: formData.email,
+      senha: formData.senha
+    });
 
-    if (!usuarioSalvo) {
-      toast.error('Nenhum usuário cadastrado. Faça o cadastro primeiro.');
-      return;
-    }
+    const { usuario, token } = response.data;
 
-    // 🔍 Comparar e-mail e senha salvos
-    if (
-      usuarioSalvo.email === formData.email &&
-      usuarioSalvo.senha === formData.senha
-    ) {
-      login(usuarioSalvo);
-      toast.success(`Bem-vindo, ${usuarioSalvo.nome}!`);
-      navigate('/');
-    } else {
-      toast.error('Email ou senha incorretos');
-    }
-  };
+    // Salva o token do usuário que acabou de fazer login
+    localStorage.setItem('token', token);
+
+    // Salva o usuário no contexto
+    login({
+      ...usuario,
+      nome: usuario.name || usuario.nome,
+      isLoggedIn: true
+    });
+
+    toast.success(
+      `Bem-vindo, ${usuario.name || usuario.nome}!`
+    );
+
+    navigate('/');
+
+  } catch (error) {
+    console.error('Erro no login:', error);
+
+    toast.error(
+      error.response?.data?.erro ||
+      'Email ou senha incorretos'
+    );
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">

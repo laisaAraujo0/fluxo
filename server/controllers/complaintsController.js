@@ -11,7 +11,7 @@ export const criarReclamacao = [
   // validate(complaintCreationSchema), // Descomente se tiver o schema
   async (req, res) => {
     try {
-      const { title, description, location, priority } = req.body;
+      const { title, description, category, location, priority, imageUrl } = req.body;
       const authorId = req.usuario?.id;
 
       if (!authorId) {
@@ -20,15 +20,24 @@ export const criarReclamacao = [
 
       const reclamacao = await prisma.complaint.create({
         data: {
-          title,
-          description,
-          location,
-          priority: priority || 'LOW',
-          authorId,
-          status: 'PENDING',
-        },
+        title,
+        description,
+        category,
+        imageUrl: imageUrl || null,
+        location,
+        priority: priority || 'LOW',
+        authorId,
+        status: 'PENDING',
+      },
         include: {
-          author: { select: { id: true, name: true, email: true } },
+          author: { 
+            select: { 
+              id: true, 
+              
+              
+              name: true, email: true 
+            } 
+          },
         },
       });
 
@@ -108,3 +117,80 @@ export const listarReclamacoes = async (req, res) => {
   }
 };
 
+// Dashboard administrativo de reclamações
+export const dashboardReclamacoes = async (req, res) => {
+  try {
+    const [
+      total,
+      novas,
+      encaminhadas,
+      emAnalise,
+      aguardandoInformacao,
+      programadas,
+      emExecucao,
+      resolvidas,
+      reabertas,
+      urgentes
+    ] = await Promise.all([
+      prisma.complaint.count(),
+
+      prisma.complaint.count({
+        where: { status: 'PENDING' }
+      }),
+
+      prisma.complaint.count({
+        where: { status: 'FORWARDED' }
+      }),
+
+      prisma.complaint.count({
+        where: { status: 'IN_REVIEW' }
+      }),
+
+      prisma.complaint.count({
+        where: { status: 'WAITING_INFORMATION' }
+      }),
+
+      prisma.complaint.count({
+        where: { status: 'SCHEDULED' }
+      }),
+
+      prisma.complaint.count({
+        where: { status: 'IN_PROGRESS' }
+      }),
+
+      prisma.complaint.count({
+        where: { status: 'RESOLVED' }
+      }),
+
+      prisma.complaint.count({
+        where: { status: 'REOPENED' }
+      }),
+
+      prisma.complaint.count({
+        where: { priority: 'URGENT' }
+      })
+    ]);
+
+    return res.json({
+      total,
+      novas,
+      encaminhadas,
+      emAnalise,
+      aguardandoInformacao,
+      programadas,
+      emExecucao,
+      resolvidas,
+      reabertas,
+      urgentes
+    });
+
+  } catch (error) {
+    logger.error('Erro ao carregar dashboard de reclamações:', {
+      error: error.message
+    });
+
+    return res.status(500).json({
+      error: 'Erro ao carregar dashboard de reclamações'
+    });
+  }
+};

@@ -12,6 +12,8 @@ model User {
   email                  String         @unique
   name                   String
   username               String         @unique
+  password               String?
+  tipo                   UserType       @default(USER)
   avatar                 String?
   bio                    String?
   cidade                 String?
@@ -58,6 +60,8 @@ model Complaint {
   id            String          @id @default(cuid())
   title         String
   description   String?
+  category      String?
+  imageUrl      String?
   location      String
   priority      Priority        @default(LOW)
   status        ComplaintStatus @default(PENDING)
@@ -155,8 +159,13 @@ enum EventCategory {
 
 enum ComplaintStatus {
   PENDING
+  FORWARDED
+  IN_REVIEW
+  WAITING_INFORMATION
+  SCHEDULED
   IN_PROGRESS
   RESOLVED
+  REOPENED
   REJECTED
 }
 
@@ -165,4 +174,11 @@ enum Priority {
   MEDIUM
   HIGH
   URGENT
+}
+
+enum UserType {
+  USER
+  ADMIN
+  AGENCY_ATTENDANT
+  AGENCY_MANAGER
 }

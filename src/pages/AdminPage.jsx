@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { api } from '@/services/api';
 import { Plus, Users, AlertCircle, CheckCircle, Clock, TrendingUp, BarChart3, Settings, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,37 @@ import { useUser } from '@/contexts/UserContext';
 
 const AdminPage = () => {
   const { user } = useUser();
+
+    const [dashboard, setDashboard] = useState({
+    total: 0,
+    novas: 0,
+    encaminhadas: 0,
+    emAnalise: 0,
+    aguardandoInformacao: 0,
+    programadas: 0,
+    emExecucao: 0,
+    resolvidas: 0,
+    reabertas: 0,
+    urgentes: 0
+  });
+
+  const [carregandoDashboard, setCarregandoDashboard] = useState(true);
+  
+  useEffect(() => {
+  const carregarDashboard = async () => {
+    try {
+      const response = await api.get('/api/reclamacoes/admin/dashboard');
+
+      setDashboard(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar dashboard:', error);
+    } finally {
+      setCarregandoDashboard(false);
+    }
+  };
+
+  carregarDashboard();
+}, []);
   
   const [usuarios] = useState([
     { id: 1, nome: "Ana Silva", email: "ana.silva@email.com", status: "Ativo", eventos: 12 },
@@ -121,12 +153,6 @@ const AdminPage = () => {
     console.log(`${action} categoria ${categoryId}`);
   };
 
-  // Estatísticas
-  const totalUsuarios = 12345;
-  const eventosAtivos = 8765;
-  const eventosPendentes = 45;
-  const eventosResolvidos = 7234;
-
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex flex-col gap-8">
@@ -142,65 +168,99 @@ const AdminPage = () => {
 
         {/* Cards de estatísticas */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+          {/* Total de reclamações */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Usuários Registrados
+                Total de Reclamações
               </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <AlertCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
+
             <CardContent>
-              <div className="text-2xl font-bold">{totalUsuarios.toLocaleString()}</div>
+              <div className="text-2xl font-bold">
+                {carregandoDashboard ? '...' : dashboard.total.toLocaleString()}
+              </div>
+
               <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+12%</span> em relação ao mês passado
+                Solicitações registradas na plataforma
               </p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Eventos Ativos
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{eventosAtivos.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-blue-600">+5%</span> em relação ao mês passado
-              </p>
-            </CardContent>
-          </Card>
 
+          {/* Novas */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Pendentes
+                Novas
               </CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
+
             <CardContent>
-              <div className="text-2xl font-bold">{eventosPendentes}</div>
+              <div className="text-2xl font-bold">
+                {carregandoDashboard ? '...' : dashboard.novas}
+              </div>
+
               <p className="text-xs text-muted-foreground">
-                Requerem atenção imediata
+                Aguardando encaminhamento
+              </p>
+            </CardContent>
+          </Card>''
+
+
+          {/* Em atendimento */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Em Atendimento
+              </CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {carregandoDashboard
+                  ? '...'
+                  : (
+                      dashboard.encaminhadas +
+                      dashboard.emAnalise +
+                      dashboard.aguardandoInformacao +
+                      dashboard.programadas +
+                      dashboard.emExecucao
+                    )
+                }
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Solicitações em andamento
               </p>
             </CardContent>
           </Card>
 
+
+          {/* Resolvidas */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Resolvidos
+                Resolvidas
               </CardTitle>
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
+
             <CardContent>
-              <div className="text-2xl font-bold">{eventosResolvidos.toLocaleString()}</div>
+              <div className="text-2xl font-bold">
+                {carregandoDashboard ? '...' : dashboard.resolvidas}
+              </div>
+
               <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+18%</span> em relação ao mês passado
+                Reclamações solucionadas
               </p>
             </CardContent>
           </Card>
+
         </div>
 
         {/* Tabs de gerenciamento */}
