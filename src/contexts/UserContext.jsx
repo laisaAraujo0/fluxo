@@ -39,6 +39,7 @@ export const UserProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
   };
 
   const toggleAdmin = () => {
@@ -58,7 +59,14 @@ export const UserProvider = ({ children }) => {
   };
 
   const isAdmin = () => {
-    return user !== null && user.tipo === 'administrador';
+    return (
+      user !== null &&
+      (
+        user.tipo === 'ADMIN' ||
+        user.tipo === 'AGENCY_ATTENDANT' ||
+        user.tipo === 'AGENCY_MANAGER'
+      )
+    );
   };
 
   const isUsuario = () => {

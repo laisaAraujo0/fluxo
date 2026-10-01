@@ -22,9 +22,16 @@ export const verificarToken = (req, res, next) => {
 
 // Middleware para verificar se é admin
 export const verificarAdmin = (req, res, next) => {
-  if (req.usuario.tipo !== 'admin' && req.usuario.tipo !== 'orgao') {
-    return res.status(403).json({ erro: 'Acesso negado. Apenas administradores.' });
+  if (
+    req.usuario.tipo !== 'ADMIN' &&
+    req.usuario.tipo !== 'AGENCY_ATTENDANT' &&
+    req.usuario.tipo !== 'AGENCY_MANAGER'
+  ) {
+    return res.status(403).json({
+      erro: 'Acesso negado. Área exclusiva para órgãos públicos.'
+    });
   }
+
   next();
 };
 

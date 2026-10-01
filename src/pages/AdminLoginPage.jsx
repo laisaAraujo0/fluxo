@@ -1,3 +1,4 @@
+import { api } from '@/services/api';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -33,51 +34,73 @@ const AdminLoginPage = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    // ----------- VALIDAÇÃO: email .gov.br ----------- //
-    if (!formData.email.endsWith('.gov.br')) {
-      toast.error('O email deve ser institucional e terminar com .gov.br');
-      return;
-    }
+  if (!formData.email || !formData.password) {
+    toast.error('Por favor, preencha todos os campos.');
+    return;
+  }
 
-    // ----------- VALIDAÇÃO: senha forte ----------- //
-    const senhaForteRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  if (!formData.email.endsWith('.gov.br')) {
+    toast.error(
+      'O email deve ser institucional e terminar com .gov.br'
+    );
+    return;
+  }
 
-    if (!senhaForteRegex.test(formData.password)) {
+  const senhaForteRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+  if (!senhaForteRegex.test(formData.password)) {
+    toast.error(
+      'A senha deve ter no mínimo 8 caracteres, incluindo letra maiúscula, minúscula, número e símbolo.'
+    );
+    return;
+  }
+
+  try {
+    const response = await api.post('/api/usuarios/login', {
+      email: formData.email,
+      senha: formData.password
+    });
+
+    const { usuario, token } = response.data;
+
+    if (
+      usuario.tipo !== 'ADMIN' &&
+      usuario.tipo !== 'AGENCY_ATTENDANT' &&
+      usuario.tipo !== 'AGENCY_MANAGER'
+    ) {
       toast.error(
-        'A senha deve ter no mínimo 8 caracteres, incluindo letra maiúscula, minúscula, número e símbolo.'
+        'Este usuário não possui acesso ao painel administrativo.'
       );
+
       return;
     }
 
-    // Valida preenchimento
-    if (!formData.email || !formData.password) {
-      toast.error('Por favor, preencha todos os campos');
-      return;
-    }
+    localStorage.setItem('token', token);
 
-    // Simulação de login administrativo
-    const admin = {
-      id: 100,
-      nomeOrgao: 'Prefeitura Municipal',
-      tipoOrgao: 'Prefeitura',
-      emailInstitucional: formData.email,
-      responsavel: {
-        nome: 'João Silva',
-        cargo: 'Secretário de Obras'
-      },
-      tipo: 'administrador',
+    login({
+      ...usuario,
       isAdmin: true,
-      avatar: null
-    };
+      isLoggedIn: true
+    });
 
-    login(admin);
     toast.success('Login administrativo realizado com sucesso!');
+
     navigate('/admin');
-  };
+
+  } catch (error) {
+    console.error('Erro no login administrativo:', error);
+
+    const mensagem =
+      error.response?.data?.erro ||
+      'Não foi possível realizar o login.';
+
+    toast.error(mensagem);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">

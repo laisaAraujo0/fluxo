@@ -74,26 +74,59 @@ export const loginUsuario = async (req, res) => {
   try {
     const { email, senha } = req.body;
 
-    // Validação básica de login para evitar falhas imediatas
     if (!email || !senha) {
-      return res.status(400).json({ erro: "Email e senha são obrigatórios" });
+      return res.status(400).json({
+        erro: "Email e senha são obrigatórios"
+      });
     }
 
-    const usuario = await prisma.user.findUnique({ where: { email } });
+    const usuario = await prisma.user.findUnique({
+      where: { email }
+    });
 
-    if (!usuario) return res.status(401).json({ erro: "Email ou senha inválidos" });
+    if (!usuario || !usuario.password) {
+      return res.status(401).json({
+        erro: "Email ou senha inválidos"
+      });
+    }
 
-    const senhaValida = await bcrypt.compare(senha, usuario.senha);
-    if (!senhaValida) return res.status(401).json({ erro: "Email ou senha inválidos" });
+    const senhaValida = await bcrypt.compare(
+      senha,
+      usuario.password
+    );
 
-    const token = jwt.sign({ id: usuario.id, email: usuario.email }, JWT_SECRET, { expiresIn: "7d" });
+    if (!senhaValida) {
+      return res.status(401).json({
+        erro: "Email ou senha inválidos"
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        id: usuario.id,
+        email: usuario.email,
+        tipo: usuario.tipo
+      },
+      JWT_SECRET,
+      {
+        expiresIn: "7d"
+      }
+    );
 
     const { password: _, ...usuarioSemSenha } = usuario;
 
-    res.json({ mensagem: "Login realizado com sucesso", usuario: usuarioSemSenha, token });
+    return res.json({
+      mensagem: "Login realizado com sucesso",
+      usuario: usuarioSemSenha,
+      token
+    });
+
   } catch (error) {
     console.error("Erro ao fazer login:", error);
-    res.status(500).json({ erro: "Erro ao fazer login" });
+
+    return res.status(500).json({
+      erro: "Erro ao fazer login"
+    });
   }
 };
 
